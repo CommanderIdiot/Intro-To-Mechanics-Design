@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -17,6 +18,10 @@ public class CharacterMovement : MonoBehaviour
     [SerializeField] private float m_CoyoteTimeThreashold = 0.4f;
     private float m_CoyoteTimeCounter;
 
+    
+    private Coroutine m_CoyoteJumpCoroutine;
+    private Coroutine m_JumpBufferCoroutine;
+    
     private void Awake()
     {
         m_ActionMap = new PlayerControls();
@@ -61,24 +66,59 @@ public class CharacterMovement : MonoBehaviour
         {
             m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse);
             m_CoyoteTimeCounter = 0;
+            
+            /*Add coyote jump coroutine here*/
+            Debug.Log("Coroutine started");
+            StartCoroutine(CoyoteJumpCoroutine());
         }
+        /*Add jump buffering coroutine here*/
     }
     #endregion
 
-    private void Update()
-    { 
+    private IEnumerator CoyoteJumpCoroutine()
+    {
+        while (true)
+        {
+            if (m_IsGrounded)
+            {
+                m_CoyoteTimeCounter = m_CoyoteTimeThreashold;
+                StopCoroutine((CoyoteJumpCoroutine()));
+            }
+            else
+            {
+                m_CoyoteTimeCounter -= Time.deltaTime;
+            }
+            yield return new WaitForSeconds(0.1f);
+        }
+    }
+
+    private IEnumerator JumpBufferCoroutine()
+    {
+        /*while (true)
+        {
+           Jump buffer ideas: 
+           if (is grounded)
+                jump
+            else
+           
+        }*/
+        yield return new WaitForSeconds(0.1f);
+    }
+    
+    /*private void Update()
+    {
         /* Potentially have it set as coroutines or timers to avoid using update?
         Also, possibly do similar for jump buffering, but will only jump if the jump key was pressed within an x time limit?
-        */ 
+
         if (m_IsGrounded)
         {
             m_CoyoteTimeCounter = m_CoyoteTimeThreashold;
         }
         else
         {
-            m_CoyoteTimeCounter -= Time.deltaTime;;
+            m_CoyoteTimeCounter -= Time.deltaTime;
         }
-    }
+    }*/
 
     private void FixedUpdate()
 	{
