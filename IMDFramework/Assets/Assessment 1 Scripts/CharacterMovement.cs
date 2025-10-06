@@ -9,8 +9,8 @@ public class CharacterMovement : MonoBehaviour
 
 	[SerializeField] private float m_MoveSpeed;
 	[SerializeField] private float m_JumpStrength;
-	[SerializeField] private Transform m_RaycastPosition;
-	[SerializeField] private LayerMask m_GroundLayer;
+	[SerializeField] public Transform m_RaycastPosition;
+	[SerializeField] public LayerMask m_GroundLayer;
 	private float m_InMove;
     private PlayerControls m_ActionMap;
     private bool m_IsGrounded;
@@ -18,6 +18,8 @@ public class CharacterMovement : MonoBehaviour
     [SerializeField] private float m_CoyoteTimeThreashold = 0.4f;
     private float m_CoyoteTimeCounter;
 
+    private Coroutine m_MoveCoroutine;
+    private bool m_IsMoveActive;
     
     private Coroutine m_CoyoteJumpCoroutine;
     private Coroutine m_JumpBufferCoroutine;
@@ -28,39 +30,28 @@ public class CharacterMovement : MonoBehaviour
 
 		m_RB = GetComponent<Rigidbody2D>();
     }
-
-    #region Bindings
-    private void OnEnable()
-    {
-        m_ActionMap.Enable();
-
-        m_ActionMap.Default.MoveHoriz.performed += Handle_MovePerformed;
-        m_ActionMap.Default.MoveHoriz.canceled += Handle_MoveCancelled;
-        m_ActionMap.Default.Jump.performed += Handle_JumpPerformed;
-    }
-
-    private void OnDisable()
-    {
-        m_ActionMap.Disable();
-
-        m_ActionMap.Default.MoveHoriz.performed -= Handle_MovePerformed;
-        m_ActionMap.Default.MoveHoriz.canceled -= Handle_MoveCancelled;
-        m_ActionMap.Default.Jump.performed -= Handle_JumpPerformed;
-    }
-    #endregion
-
+    
     #region InputFunctions
 
-    private void Handle_MovePerformed(InputAction.CallbackContext context)
+    public void SetInMove(float direction)
     {
-        m_InMove = context.ReadValue<float>();
-    }
-    private void Handle_MoveCancelled(InputAction.CallbackContext context)
-    {
-        m_InMove = 0f;
+        m_InMove = direction;
+
+        if (m_InMove == 0)
+        {
+            m_IsMoveActive = false;
+        }
+        else
+        {
+            if(m_IsMoveActive) { return;}
+            
+            m_IsMoveActive = true;
+
+            m_MoveCoroutine = StartCoroutine(C_MovementUpdate());
+        }
     }
 
-    private void Handle_JumpPerformed(InputAction.CallbackContext context)
+    public void JumpPerformed()
     {
         if (m_IsGrounded || m_CoyoteTimeCounter > 0)
         {
@@ -69,20 +60,31 @@ public class CharacterMovement : MonoBehaviour
             
             /*Add coyote jump coroutine here*/
             Debug.Log("Coroutine started");
-            StartCoroutine(CoyoteJumpCoroutine());
+            StartCoroutine(C_CoyoteJumpCoroutine());
         }
         /*Add jump buffering coroutine here*/
     }
     #endregion
 
-    private IEnumerator CoyoteJumpCoroutine()
+    #region Coroutines
+
+    private IEnumerator C_MovementUpdate()
+    {
+        while (m_IsMoveActive)
+        {
+            yield return new WaitForFixedUpdate();
+            m_RB.linearVelocityX = m_MoveSpeed * m_InMove;
+        }
+    }
+    
+    private IEnumerator C_CoyoteJumpCoroutine()
     {
         while (true)
         {
             if (m_IsGrounded)
             {
                 m_CoyoteTimeCounter = m_CoyoteTimeThreashold;
-                StopCoroutine((CoyoteJumpCoroutine()));
+                StopCoroutine((C_CoyoteJumpCoroutine()));
             }
             else
             {
@@ -90,18 +92,25 @@ public class CharacterMovement : MonoBehaviour
             }
             yield return new WaitForSeconds(0.1f);
         }
+        /* Try to do this:
+         1. Make variable jump height where a timer runs when jump is held. If held for 0.5 seconds or less, do the base jump height and for more than 0.5 seconds double the jump height.
+         2. Figure out how to do an anti-gravity apex.
+         */
     }
 
     private IEnumerator JumpBufferCoroutine()
     {
         /*while (true)
         {
-           Jump buffer ideas: 
+           Jump buffer ideas:
            if (is grounded)
                 jump
             else
-           
+
         }*/
+
+    #endregion
+
         yield return new WaitForSeconds(0.1f);
     }
     
@@ -122,8 +131,6 @@ public class CharacterMovement : MonoBehaviour
 
     private void FixedUpdate()
 	{
-		m_RB.linearVelocityX = m_MoveSpeed * m_InMove;
-
         m_IsGrounded = Physics2D.Raycast(m_RaycastPosition.position, Vector2.down, 0.1f, m_GroundLayer);
 	}
 }
