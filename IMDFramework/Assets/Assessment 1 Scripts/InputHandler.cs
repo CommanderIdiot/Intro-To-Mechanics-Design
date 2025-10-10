@@ -5,6 +5,8 @@ using UnityEngine.InputSystem;
 public class InputHandler : MonoBehaviour
 {
     [SerializeField] private CharacterMovement m_CharacterMovement;
+
+    [SerializeField] private LayerMask m_InteractableLayer;
     private PlayerControls m_ActionMap;
 
     private void Awake()
@@ -20,6 +22,7 @@ public class InputHandler : MonoBehaviour
         m_ActionMap.Default.MoveHoriz.performed += Handle_SetInMove;
         m_ActionMap.Default.MoveHoriz.canceled += Handle_MoveCancelled;
         m_ActionMap.Default.Jump.performed += Handle_JumpPerformed;
+        m_ActionMap.Default.Interact.performed += Handle_InteractPerformed;
     }
 
     private void OnDisable()
@@ -29,6 +32,7 @@ public class InputHandler : MonoBehaviour
         m_ActionMap.Default.MoveHoriz.performed -= Handle_SetInMove;
         m_ActionMap.Default.MoveHoriz.canceled -= Handle_MoveCancelled;
         m_ActionMap.Default.Jump.performed -= Handle_JumpPerformed;
+        m_ActionMap.Default.Interact.performed -= Handle_InteractPerformed;
     }
     #endregion
     
@@ -45,6 +49,18 @@ public class InputHandler : MonoBehaviour
     private void Handle_JumpPerformed(InputAction.CallbackContext context)
     {
         m_CharacterMovement.JumpPerformed();
+    }
+    
+    private void Handle_InteractPerformed(InputAction.CallbackContext context)
+    {
+        Collider2D Collider = Physics2D.OverlapCircle(transform.position, 1, m_InteractableLayer);
+
+        if (Collider != null && Collider.transform.TryGetComponent<IInteractable>(out var Interactable))
+        {
+            Interactable.Interact();
+        }
+            
+            
     }
     #endregion
 }
