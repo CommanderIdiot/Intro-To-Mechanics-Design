@@ -7,7 +7,7 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         m_HealthComponent = GetComponent<HealthComponent>();
-        Debug.Log(m_HealthComponent != null);
+        Debug.Assert(m_HealthComponent != null);
     }
 
     private void Start()
