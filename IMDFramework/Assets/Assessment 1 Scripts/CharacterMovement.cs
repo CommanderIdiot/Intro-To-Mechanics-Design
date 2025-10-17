@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -28,6 +29,8 @@ public class CharacterMovement : MonoBehaviour
     
     private Coroutine m_CoyoteJumpCoroutine;
     private Coroutine m_JumpBufferCoroutine;
+    
+    private float m_FrameTimeThreashold = 0;
     
     private void Awake()
     {
@@ -62,13 +65,19 @@ public class CharacterMovement : MonoBehaviour
         {
             m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse);
             m_CoyoteTimeCounter = 0;
+            m_FrameTimeThreashold = 0;
 
+            //Meant to perform if it meets the coyote time as inactive while jump is active (able to be used)
             if (!b_IsCoyoteCoroutineActive && b_IsJumpActive)
             {
                 Debug.Log("Coyote time coroutine started");
-                StartCoroutine(C_CoyoteJumpCoroutine());
+                
+                b_IsCoyoteCoroutineActive = true;
                 b_IsJumpActive = false;
+                
+                StartCoroutine(C_CoyoteJumpCoroutine());
             }
+            //Meant to perform if the coyote coroutine is active while jump is inactive (not able to be used)
             else if (b_IsCoyoteCoroutineActive && !b_IsJumpActive)
             {
                 Debug.Log("Jump buffer coroutine started");
@@ -94,18 +103,20 @@ public class CharacterMovement : MonoBehaviour
     {
         while (true)
         {
-            if (m_IsGrounded)
+            if (m_IsGrounded && m_FrameTimeThreashold > 0.5)
             {
                 m_CoyoteTimeCounter = m_CoyoteTimeThreashold;
-                StopCoroutine((C_CoyoteJumpCoroutine()));
+                
+                b_IsCoyoteCoroutineActive = false;
                 b_IsJumpActive = true;
+                
+                StopCoroutine((C_CoyoteJumpCoroutine()));
                 Debug.Log("Coyote time coroutine stopped");
                 break;
             }
-            else
-            {
-                m_CoyoteTimeCounter -= Time.deltaTime;
-            }
+            
+            m_CoyoteTimeCounter -= Time.deltaTime;
+            m_FrameTimeThreashold += Time.deltaTime;
 
             yield return new WaitForFixedUpdate();
         }
