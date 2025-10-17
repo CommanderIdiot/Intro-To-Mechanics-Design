@@ -10,3 +10,11 @@ public class GroundSensor : MonoBehaviour
         m_IsGrounded = Physics2D.Raycast(m_CharacterMovement.m_RaycastPosition.position, Vector2.down, 0.1f, m_CharacterMovement.m_GroundLayer);
     }
 }
+
+/*
+ *Plan:
+ * 1. Character movement calls ground sensor.
+ * 2. Runs fixed update, could maybe try to make it into a coroutine.
+ * 3. Gives a notification to character movement to update it.
+ * 
+ */

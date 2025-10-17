@@ -17,9 +17,14 @@ public class CharacterMovement : MonoBehaviour
 
     [SerializeField] private float m_CoyoteTimeThreashold = 0.4f;
     private float m_CoyoteTimeCounter;
+    private bool b_IsCoyoteCoroutineActive;
 
+    [SerializeField] private float m_JumpBufferThreashold = 0.4f;
+    private float m_JumpBufferTimeCounter;
+    
     private Coroutine m_MoveCoroutine;
-    private bool m_IsMoveActive;
+    private bool b_IsMoveActive;
+    private bool b_IsJumpActive = true;
     
     private Coroutine m_CoyoteJumpCoroutine;
     private Coroutine m_JumpBufferCoroutine;
@@ -31,7 +36,7 @@ public class CharacterMovement : MonoBehaviour
 		m_RB = GetComponent<Rigidbody2D>();
     }
     
-    #region InputFunctions
+    #region Move/Jump Functions
 
     public void SetInMove(float direction)
     {
@@ -39,13 +44,13 @@ public class CharacterMovement : MonoBehaviour
 
         if (m_InMove == 0)
         {
-            m_IsMoveActive = false;
+            b_IsMoveActive = false;
         }
         else
         {
-            if(m_IsMoveActive) { return;}
+            if(b_IsMoveActive) { return;}
             
-            m_IsMoveActive = true;
+            b_IsMoveActive = true;
 
             m_MoveCoroutine = StartCoroutine(C_MovementUpdate());
         }
@@ -57,20 +62,28 @@ public class CharacterMovement : MonoBehaviour
         {
             m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse);
             m_CoyoteTimeCounter = 0;
-            
-            /*Add coyote jump coroutine here*/
-            Debug.Log("Coroutine started");
-            StartCoroutine(C_CoyoteJumpCoroutine());
+
+            if (!b_IsCoyoteCoroutineActive && b_IsJumpActive)
+            {
+                Debug.Log("Coyote time coroutine started");
+                StartCoroutine(C_CoyoteJumpCoroutine());
+                b_IsJumpActive = false;
+            }
+            else if (b_IsCoyoteCoroutineActive && !b_IsJumpActive)
+            {
+                Debug.Log("Jump buffer coroutine started");
+                StartCoroutine(C_JumpBufferCoroutine());
+            }
         }
-        /*Add jump buffering coroutine here*/
     }
+    
     #endregion
 
     #region Coroutines
 
     private IEnumerator C_MovementUpdate()
     {
-        while (m_IsMoveActive)
+        while (b_IsMoveActive)
         {
             yield return new WaitForFixedUpdate();
             m_RB.linearVelocityX = m_MoveSpeed * m_InMove;
@@ -85,12 +98,16 @@ public class CharacterMovement : MonoBehaviour
             {
                 m_CoyoteTimeCounter = m_CoyoteTimeThreashold;
                 StopCoroutine((C_CoyoteJumpCoroutine()));
+                b_IsJumpActive = true;
+                Debug.Log("Coyote time coroutine stopped");
+                break;
             }
             else
             {
                 m_CoyoteTimeCounter -= Time.deltaTime;
             }
-            yield return new WaitForSeconds(0.1f);
+
+            yield return new WaitForFixedUpdate();
         }
         /* Try to do this:
          1. Make variable jump height where a timer runs when jump is held. If held for 0.5 seconds or less, do the base jump height and for more than 0.5 seconds double the jump height.
@@ -98,21 +115,26 @@ public class CharacterMovement : MonoBehaviour
          */
     }
 
-    private IEnumerator JumpBufferCoroutine()
+    private IEnumerator C_JumpBufferCoroutine()
     {
-        /*while (true)
+        // RETHINK THIS, maybe "if not grounded, set a timer to be active until it is grounded. THEN check to see if this is under a limit, then jump/not jump.
+        while (true)
         {
-           Jump buffer ideas:
-           if (is grounded)
-                jump
+            if (!m_IsGrounded)
+            {
+                m_JumpBufferTimeCounter = m_JumpBufferThreashold;
+                StopCoroutine((C_JumpBufferCoroutine()));
+                Debug.Log("Jump buffer coroutine stopped.");
+                break;
+            }
             else
-
-        }*/
-
-    #endregion
-
-        yield return new WaitForSeconds(0.1f);
+            {
+                m_JumpBufferTimeCounter -= Time.deltaTime;
+            }
+            yield return new WaitForFixedUpdate();
+        }
     }
+    #endregion
     
     /*private void Update()
     {
