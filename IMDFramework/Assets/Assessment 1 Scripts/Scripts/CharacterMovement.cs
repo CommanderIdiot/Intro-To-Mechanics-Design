@@ -1,5 +1,6 @@
 
 using System.Collections;
+using System.Text;
 using UnityEngine;
 
 
@@ -73,7 +74,6 @@ public class CharacterMovement : MonoBehaviour
 
     public void JumpPerformed() //Nullable float? Not sure.
     {
-        Debug.Log("Jump Performed.");
         if (b_IsGrounded || m_CoyoteTimeCounter > 0)
         {
             /*switch (m_JumpPowerTimer) //Get the passed number for how long the jump was pressed. Then change power of the jump accordingly.
@@ -85,16 +85,20 @@ public class CharacterMovement : MonoBehaviour
                     m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse);
                     break;
             }*/
-
+            
+            //Need to account for falling and coyote jump being executable during this time.
                 
             m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse);
             m_CoyoteTimeCounter = 0;
             m_FrameTimeThreashold = 0;
-
+            
+            Debug.Log("Jump function caused super jump.");
+            
             //Performs if the coyote time is not active while jump is active
             if (!b_IsCoyoteCoroutineActive && b_IsJumpActive)
             {
                 b_IsCoyoteCoroutineActive = true;
+                
                 b_IsJumpActive = false;
                 
                 StartCoroutine(C_CoyoteJumpCoroutine());
@@ -126,12 +130,14 @@ public class CharacterMovement : MonoBehaviour
     {
         while (true)
         {
-            if (b_IsGrounded && m_FrameTimeThreashold > 0.5)
+            //Make it run off a boolean instead.
+            if (m_FrameTimeThreashold > 0.5 && b_IsGrounded && b_IsCoyoteCoroutineActive)
             {
                 m_CoyoteTimeCounter = m_CoyoteTimeThreashold;
                 
-                b_IsCoyoteCoroutineActive = false;
                 b_IsJumpActive = true;
+                
+                b_IsCoyoteCoroutineActive = false;
                 
                 StopCoroutine((C_CoyoteJumpCoroutine()));
 
@@ -143,10 +149,6 @@ public class CharacterMovement : MonoBehaviour
 
             yield return new WaitForFixedUpdate();
         }
-        /* Try to do this:
-         1. Make variable jump height where a timer runs when jump is held. If held for 0.5 seconds or less, do the base jump height and for more than 0.5 seconds double the jump height.
-         2. Figure out how to do an anti-gravity apex.
-         */
     }
 
     private IEnumerator C_JumpBufferCoroutine()
@@ -155,14 +157,16 @@ public class CharacterMovement : MonoBehaviour
         {
             if (m_JumpBufferTimeCounter <= m_JumpBufferThreashold)
             {
-                if (b_IsGrounded)
+                if (b_IsGrounded && b_IsJumpActive)
                 {
                     m_JumpBufferTimeCounter = 0;
                     
-                    b_IsCoyoteCoroutineActive = false;
                     b_IsJumpActive = true;
+                    
+                    b_IsCoyoteCoroutineActive = false;
                     b_IsJumpBufferActive = false;
                     
+                    Debug.Log("Jump Coroutine caused super jump.");
                     JumpPerformed();
                     
                     StopCoroutine(C_JumpBufferCoroutine());
