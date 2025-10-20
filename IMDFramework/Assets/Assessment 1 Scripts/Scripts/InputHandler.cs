@@ -9,6 +9,7 @@ public class InputHandler : MonoBehaviour
     [SerializeField] private LayerMask m_InteractableLayer;
     private PlayerControls m_ActionMap;
 
+    private float m_JumpPressedLength;
     private void Awake()
     {
         m_ActionMap = new PlayerControls();
@@ -48,7 +49,8 @@ public class InputHandler : MonoBehaviour
     }
     private void Handle_JumpPerformed(InputAction.CallbackContext context)
     {
-        m_CharacterMovement.JumpPerformed();
+        //m_JumpPressedLength = Figure out how to get key pressed length
+        m_CharacterMovement.JumpPerformed(); //Pass key pressed length
     }
     
     private void Handle_InteractPerformed(InputAction.CallbackContext context)

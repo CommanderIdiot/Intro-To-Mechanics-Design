@@ -1,36 +1,48 @@
-using System;
+
 using System.Collections;
-using System.Text;
 using UnityEngine;
-using UnityEngine.InputSystem;
+
 
 public class CharacterMovement : MonoBehaviour
 {
 	private Rigidbody2D m_RB;
 
-	[SerializeField] private float m_MoveSpeed;
-	[SerializeField] private float m_JumpStrength;
 	[SerializeField] public Transform m_RaycastPosition;
+    
 	[SerializeField] public LayerMask m_GroundLayer;
-	private float m_InMove;
-    private PlayerControls m_ActionMap;
-    private bool m_IsGrounded;
 
-    [SerializeField] private float m_CoyoteTimeThreashold = 0.4f;
-    private float m_CoyoteTimeCounter;
+    private PlayerControls m_ActionMap;
+
+    //Coroutines.
+    private Coroutine m_CoyoteJumpCoroutine;
+    
+    private Coroutine m_JumpBufferCoroutine;
+    
+    private Coroutine m_MoveCoroutine;
+    
+    //Bools.
+    private bool b_IsGrounded;
+    
     private bool b_IsCoyoteCoroutineActive;
+    
+    private bool b_IsJumpActive = true;
+
+    private bool b_IsJumpBufferActive = false;
+    
+    private bool b_IsMoveActive;
+    
+    //Floats
+    [SerializeField] private float m_MoveSpeed;
+    [SerializeField] private float m_JumpStrength;
+    private float m_InMove;
+    
+    [SerializeField] private float m_CoyoteTimeThreashold = 0.4f;
+    [SerializeField] float m_JumpPowerTimer;
+    private float m_CoyoteTimeCounter;
+    private float m_FrameTimeThreashold = 0;
 
     [SerializeField] private float m_JumpBufferThreashold = 0.4f;
     private float m_JumpBufferTimeCounter;
-    
-    private Coroutine m_MoveCoroutine;
-    private bool b_IsMoveActive;
-    private bool b_IsJumpActive = true;
-    
-    private Coroutine m_CoyoteJumpCoroutine;
-    private Coroutine m_JumpBufferCoroutine;
-    
-    private float m_FrameTimeThreashold = 0;
     
     private void Awake()
     {
@@ -59,30 +71,41 @@ public class CharacterMovement : MonoBehaviour
         }
     }
 
-    public void JumpPerformed()
+    public void JumpPerformed() //Nullable float? Not sure.
     {
-        if (m_IsGrounded || m_CoyoteTimeCounter > 0)
+        Debug.Log("Jump Performed.");
+        if (b_IsGrounded || m_CoyoteTimeCounter > 0)
         {
+            /*switch (m_JumpPowerTimer) //Get the passed number for how long the jump was pressed. Then change power of the jump accordingly.
+            {
+                case <= 0.5f:
+                    m_RB.AddForce(Vector2.up * (0.5f * m_JumpStrength), ForceMode2D.Impulse);
+                    break;
+                case >= 0.5f:
+                    m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse);
+                    break;
+            }*/
+
+                
             m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse);
             m_CoyoteTimeCounter = 0;
             m_FrameTimeThreashold = 0;
 
-            //Meant to perform if it meets the coyote time as inactive while jump is active (able to be used)
+            //Performs if the coyote time is not active while jump is active
             if (!b_IsCoyoteCoroutineActive && b_IsJumpActive)
             {
-                Debug.Log("Coyote time coroutine started");
-                
                 b_IsCoyoteCoroutineActive = true;
                 b_IsJumpActive = false;
                 
                 StartCoroutine(C_CoyoteJumpCoroutine());
             }
-            //Meant to perform if the coyote coroutine is active while jump is inactive (not able to be used)
-            else if (b_IsCoyoteCoroutineActive && !b_IsJumpActive)
-            {
-                Debug.Log("Jump buffer coroutine started");
-                StartCoroutine(C_JumpBufferCoroutine());
-            }
+        }
+        //Performs if the jump buffer is not active
+        else if (!b_IsJumpBufferActive)
+        {
+            b_IsJumpBufferActive = true;
+            
+            StartCoroutine(C_JumpBufferCoroutine());
         }
     }
     
@@ -103,7 +126,7 @@ public class CharacterMovement : MonoBehaviour
     {
         while (true)
         {
-            if (m_IsGrounded && m_FrameTimeThreashold > 0.5)
+            if (b_IsGrounded && m_FrameTimeThreashold > 0.5)
             {
                 m_CoyoteTimeCounter = m_CoyoteTimeThreashold;
                 
@@ -111,7 +134,7 @@ public class CharacterMovement : MonoBehaviour
                 b_IsJumpActive = true;
                 
                 StopCoroutine((C_CoyoteJumpCoroutine()));
-                Debug.Log("Coyote time coroutine stopped");
+
                 break;
             }
             
@@ -128,42 +151,44 @@ public class CharacterMovement : MonoBehaviour
 
     private IEnumerator C_JumpBufferCoroutine()
     {
-        // RETHINK THIS, maybe "if not grounded, set a timer to be active until it is grounded. THEN check to see if this is under a limit, then jump/not jump.
         while (true)
         {
-            if (!m_IsGrounded)
+            if (m_JumpBufferTimeCounter <= m_JumpBufferThreashold)
             {
-                m_JumpBufferTimeCounter = m_JumpBufferThreashold;
-                StopCoroutine((C_JumpBufferCoroutine()));
-                Debug.Log("Jump buffer coroutine stopped.");
+                if (b_IsGrounded)
+                {
+                    m_JumpBufferTimeCounter = 0;
+                    
+                    b_IsCoyoteCoroutineActive = false;
+                    b_IsJumpActive = true;
+                    b_IsJumpBufferActive = false;
+                    
+                    JumpPerformed();
+                    
+                    StopCoroutine(C_JumpBufferCoroutine());
+                    
+                    break; 
+                }
+            }
+            else if (m_JumpBufferTimeCounter >= m_JumpBufferThreashold)
+            {
+                m_JumpBufferTimeCounter = 0;
+                
+                b_IsJumpBufferActive = false;
+                
+                StopCoroutine(C_JumpBufferCoroutine());
+                
                 break;
             }
-            else
-            {
-                m_JumpBufferTimeCounter -= Time.deltaTime;
-            }
+            
+            m_JumpBufferTimeCounter += Time.deltaTime;
             yield return new WaitForFixedUpdate();
         }
     }
     #endregion
-    
-    /*private void Update()
-    {
-        /* Potentially have it set as coroutines or timers to avoid using update?
-        Also, possibly do similar for jump buffering, but will only jump if the jump key was pressed within an x time limit?
-
-        if (m_IsGrounded)
-        {
-            m_CoyoteTimeCounter = m_CoyoteTimeThreashold;
-        }
-        else
-        {
-            m_CoyoteTimeCounter -= Time.deltaTime;
-        }
-    }*/
 
     private void FixedUpdate()
 	{
-        m_IsGrounded = Physics2D.Raycast(m_RaycastPosition.position, Vector2.down, 0.1f, m_GroundLayer);
+        b_IsGrounded = Physics2D.Raycast(m_RaycastPosition.position, Vector2.down, 0.1f, m_GroundLayer);
 	}
 }
