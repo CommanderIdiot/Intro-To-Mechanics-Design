@@ -47,10 +47,20 @@ public class InputHandler : MonoBehaviour
     {
         m_CharacterMovement.SetInMove(0);
     }
+
     private void Handle_JumpPerformed(InputAction.CallbackContext context)
     {
         //m_JumpPressedLength = Figure out how to get key pressed length
-        m_CharacterMovement.JumpPerformed(); //Pass key pressed length
+
+        /*if (GetComponentInParent<GroundDetector>() == true)
+        {
+            Debug.Log("Ground Detection Called.");
+
+            GroundDetector m_GroundDetector = GetComponentInParent<GroundDetector>();
+            m_GroundDetector.GroundDetection();
+        }*/
+
+    m_CharacterMovement.JumpPerformed(); //Pass key pressed length
     }
     
     private void Handle_InteractPerformed(InputAction.CallbackContext context)

@@ -1,4 +1,5 @@
 
+using System;
 using System.Collections;
 using System.Text;
 using UnityEngine;
@@ -7,12 +8,12 @@ using UnityEngine;
 public class CharacterMovement : MonoBehaviour
 {
 	private Rigidbody2D m_RB;
-
-	[SerializeField] public Transform m_RaycastPosition;
     
 	[SerializeField] public LayerMask m_GroundLayer;
 
     private PlayerControls m_ActionMap;
+    
+    private GroundDetector m_GroundDetector;
 
     //Coroutines.
     private Coroutine m_CoyoteJumpCoroutine;
@@ -44,13 +45,26 @@ public class CharacterMovement : MonoBehaviour
 
     [SerializeField] private float m_JumpBufferThreashold = 0.4f;
     private float m_JumpBufferTimeCounter;
-    
+
+    #region Awake/Start/OnDestroy Functions
     private void Awake()
     {
         m_ActionMap = new PlayerControls();
 
-		m_RB = GetComponent<Rigidbody2D>();
+        m_GroundDetector = GetComponent<GroundDetector>();
+        
+        m_RB = GetComponent<Rigidbody2D>();
     }
+    private void Start()
+    {
+        m_GroundDetector.OnGroundContact += Handle_OnGroundContact;
+    }
+    private void OnDestroy()
+    {
+        m_GroundDetector.OnGroundContact -= Handle_OnGroundContact;
+    }
+
+    #endregion
     
     #region Move/Jump Functions
 
@@ -72,7 +86,7 @@ public class CharacterMovement : MonoBehaviour
         }
     }
 
-    public void JumpPerformed() //Nullable float? Not sure.
+    public void JumpPerformed()
     {
         if (b_IsGrounded || m_CoyoteTimeCounter > 0)
         {
@@ -139,7 +153,7 @@ public class CharacterMovement : MonoBehaviour
                 
                 b_IsCoyoteCoroutineActive = false;
                 
-                StopCoroutine((C_CoyoteJumpCoroutine()));
+                StopCoroutine(C_CoyoteJumpCoroutine());
 
                 break;
             }
@@ -189,10 +203,14 @@ public class CharacterMovement : MonoBehaviour
             yield return new WaitForFixedUpdate();
         }
     }
-    #endregion
+    #endregion 
 
-    private void FixedUpdate()
-	{
-        b_IsGrounded = Physics2D.Raycast(m_RaycastPosition.position, Vector2.down, 0.1f, m_GroundLayer);
-	}
+    #region Events
+    private void Handle_OnGroundContact(bool obj)
+    {
+        b_IsGrounded = m_GroundDetector.b_IsGrounded;
+        Debug.Log("Ground Detection Set.");
+    }
+    #endregion
 }
+
