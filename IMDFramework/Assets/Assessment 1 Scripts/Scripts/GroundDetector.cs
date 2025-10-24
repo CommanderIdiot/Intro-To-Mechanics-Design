@@ -48,11 +48,9 @@ public class GroundDetector : MonoBehaviour
             
             if (b_IsGrounded)
             {
-                Debug.Log("Ground Detection Finished.");
-        
                 OnGroundContact?.Invoke(b_IsGrounded);
 
-                break;
+                yield return new WaitForFixedUpdate();
             }
             
             b_IsGrounded = false;
@@ -68,6 +66,6 @@ public class GroundDetector : MonoBehaviour
  *Plan:
  * 1. Character movement calls ground sensor.
  * 2. Runs fixed update, could maybe try to make it into a coroutine.
- * 3. Gives a notification to character movement to update it.
- * 
+ * 3. Gives a notification to character movement to update if the player is grounded.
+ * 4. Stop it spamming event announcement as much.
  */

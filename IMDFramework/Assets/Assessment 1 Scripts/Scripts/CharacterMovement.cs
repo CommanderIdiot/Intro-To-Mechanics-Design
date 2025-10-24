@@ -1,7 +1,5 @@
-
 using System;
 using System.Collections;
-using System.Text;
 using UnityEngine;
 
 
@@ -86,11 +84,11 @@ public class CharacterMovement : MonoBehaviour
         }
     }
 
-    public void JumpPerformed()
+    public void JumpPerformed(float? mJumpPressedLength)
     {
         if (b_IsGrounded || m_CoyoteTimeCounter > 0)
         {
-            /*switch (m_JumpPowerTimer) //Get the passed number for how long the jump was pressed. Then change power of the jump accordingly.
+            switch (m_JumpPowerTimer) //Get the passed number for how long the jump was pressed. Then change power of the jump accordingly.
             {
                 case <= 0.5f:
                     m_RB.AddForce(Vector2.up * (0.5f * m_JumpStrength), ForceMode2D.Impulse);
@@ -98,15 +96,15 @@ public class CharacterMovement : MonoBehaviour
                 case >= 0.5f:
                     m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse);
                     break;
-            }*/
+            }
+            
+            //have the ground sensor called in here
             
             //Need to account for falling and coyote jump being executable during this time.
                 
             m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse);
             m_CoyoteTimeCounter = 0;
             m_FrameTimeThreashold = 0;
-            
-            Debug.Log("Jump function caused super jump.");
             
             //Performs if the coyote time is not active while jump is active
             if (!b_IsCoyoteCoroutineActive && b_IsJumpActive)
@@ -180,8 +178,7 @@ public class CharacterMovement : MonoBehaviour
                     b_IsCoyoteCoroutineActive = false;
                     b_IsJumpBufferActive = false;
                     
-                    Debug.Log("Jump Coroutine caused super jump.");
-                    JumpPerformed();
+                    JumpPerformed(null);
                     
                     StopCoroutine(C_JumpBufferCoroutine());
                     
@@ -209,8 +206,16 @@ public class CharacterMovement : MonoBehaviour
     private void Handle_OnGroundContact(bool obj)
     {
         b_IsGrounded = m_GroundDetector.b_IsGrounded;
-        Debug.Log("Ground Detection Set.");
     }
     #endregion
 }
 
+/* Ideas for jump mechanics in movement:
+ * 1. Jump performed after it gets triggered starts a coroutine that handles the jump in all stages.
+ * 2. Adjusting size of the collider at the start of the jump to be smaller. Maybe need more colliders to do this or adjust the sizing of the only one.
+ * 3. Adjusting the size of the collider towards the end of the fall to try and make people catch onto platforms they fall onto.
+ * 4. Reset the collider size back to normal.
+ * 5. The falling part of it gives the character sticky feet when falling.
+ * 6. Figure out how to make the jump add a small amount of force for how long they have it held for.
+ * 7. Crouching on ledges seems to be just detect if you're on a ledge should probably be on a different script.
+ */
