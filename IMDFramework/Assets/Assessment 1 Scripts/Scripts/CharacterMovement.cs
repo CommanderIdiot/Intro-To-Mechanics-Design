@@ -1,26 +1,29 @@
-using System;
 using System.Collections;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 
 public class CharacterMovement : MonoBehaviour
 {
-	private Rigidbody2D m_RB;
+    #region Variables
+    private Rigidbody2D m_RB;
     
-	[SerializeField] public LayerMask m_GroundLayer;
+    [SerializeField] public LayerMask m_GroundLayer;
 
     private PlayerControls m_ActionMap;
     
     private GroundDetector m_GroundDetector;
 
-    //Coroutines.
+    /* Coroutines. */
     private Coroutine m_CoyoteJumpCoroutine;
     
     private Coroutine m_JumpBufferCoroutine;
     
     private Coroutine m_MoveCoroutine;
+
+    private Coroutine m_JumpStatusHandler;
     
-    //Bools.
+    /* Bools. */
     private bool b_IsGrounded;
     
     private bool b_IsCoyoteCoroutineActive;
@@ -31,7 +34,14 @@ public class CharacterMovement : MonoBehaviour
     
     private bool b_IsMoveActive;
     
-    //Floats
+    /* Ints */
+    [SerializeField] private int m_AscendLengthCounter;
+    private int m_CurrentAscendLength;
+    
+    [SerializeField] private int m_JumpApexLengthCounter;
+    private int m_CurrentJumpApexLength;
+    
+    /* Floats */
     [SerializeField] private float m_MoveSpeed;
     [SerializeField] private float m_JumpStrength;
     private float m_InMove;
@@ -44,24 +54,40 @@ public class CharacterMovement : MonoBehaviour
     [SerializeField] private float m_JumpBufferThreashold = 0.4f;
     private float m_JumpBufferTimeCounter;
 
+    private float m_RigidBodyGravity;
+    
+    /* Enum */
+    public enum JumpStates
+    {
+        Ascend,
+        Apex,
+        Falling
+    }
+    
+    private JumpStates m_JumpState = JumpStates.Ascend;
+
+    #endregion
+    
     #region Awake/Start/OnDestroy Functions
+
     private void Awake()
     {
         m_ActionMap = new PlayerControls();
 
-        m_GroundDetector = GetComponent<GroundDetector>();
-        
+        if (GetComponentInParent<GroundDetector>() != null)
+        {
+            m_GroundDetector = GetComponent<GroundDetector>();
+            Debug.Log("Ground detector attached");
+        }
+
         m_RB = GetComponent<Rigidbody2D>();
     }
+
     private void Start()
     {
-        m_GroundDetector.OnGroundContact += Handle_OnGroundContact;
+        m_RigidBodyGravity = m_RB.gravityScale;
+        Debug.Log("Gravity scale saved.");
     }
-    private void OnDestroy()
-    {
-        m_GroundDetector.OnGroundContact -= Handle_OnGroundContact;
-    }
-
     #endregion
     
     #region Move/Jump Functions
@@ -84,51 +110,64 @@ public class CharacterMovement : MonoBehaviour
         }
     }
 
-    public void JumpPerformed(float? mJumpPressedLength)
+    public void JumpPerformed(JumpStates jumpStates)
     {
-        if (b_IsGrounded || m_CoyoteTimeCounter > 0)
-        {
-            switch (m_JumpPowerTimer) //Get the passed number for how long the jump was pressed. Then change power of the jump accordingly.
+        b_IsGrounded = m_GroundDetector.GroundDetection();
+        Debug.Log("IsGrounded equals "  + b_IsGrounded);
+        
+        m_JumpState = jumpStates;
+        
+            if (b_IsGrounded || m_CoyoteTimeCounter > 0)
             {
-                case <= 0.5f:
-                    m_RB.AddForce(Vector2.up * (0.5f * m_JumpStrength), ForceMode2D.Impulse);
-                    break;
-                case >= 0.5f:
-                    m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse);
-                    break;
+                //have the ground sensor called in here
+            
+                //Need to account for falling and coyote jump being executable during this time.
+
+                Debug.Log("Entered IsGrounded || Coyote time counter > 0");
+                StartCoroutine(C_JumpStatusHandler()); //Starts the jump handler.
+
+                /*m_CoyoteTimeCounter = 0;
+                m_FrameTimeThreashold = 0;
+
+                //Performs if the coyote time is not active while jump is active
+                if (!b_IsCoyoteCoroutineActive && b_IsJumpActive)
+                {
+                    b_IsCoyoteCoroutineActive = true;
+
+                    b_IsGrounded = false;
+                    b_IsJumpActive = false;
+
+                    StartCoroutine(C_CoyoteJumpCoroutine());
+                }*/
             }
-            
-            //have the ground sensor called in here
-            
-            //Need to account for falling and coyote jump being executable during this time.
-                
-            m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse);
-            m_CoyoteTimeCounter = 0;
-            m_FrameTimeThreashold = 0;
-            
-            //Performs if the coyote time is not active while jump is active
-            if (!b_IsCoyoteCoroutineActive && b_IsJumpActive)
+            //Performs if the jump buffer is not active
+            else if (!b_IsJumpBufferActive)
             {
-                b_IsCoyoteCoroutineActive = true;
-                
-                b_IsJumpActive = false;
-                
-                StartCoroutine(C_CoyoteJumpCoroutine());
-            }
-        }
-        //Performs if the jump buffer is not active
-        else if (!b_IsJumpBufferActive)
-        {
-            b_IsJumpBufferActive = true;
+                b_IsJumpBufferActive = true;
             
-            StartCoroutine(C_JumpBufferCoroutine());
-        }
+                StartCoroutine(C_JumpBufferCoroutine());
+            }
     }
     
     #endregion
 
-    #region Coroutines
+    /* make a jump handler coroutine STARTED
+     * have it use a while loop for rising that adds a force mode 2d . force STARTED
+     * if for the apex
+     * a while until it touches the ground to stop the coroutine
+     * reset state after jump is finished
+     * add a jump cancel event into input handler to cancel the jump
+     *
+     * get ground detector found in awake COMPLETED
+     * then call the function to return the detection as true or false COMPLETED
+     * have an update to run the raycast COMPLETED
+    */
 
+    #region Coroutines
+    
+    /* Movement Coroutine.
+     * Handles the movement of the character while it is active.
+     */
     private IEnumerator C_MovementUpdate()
     {
         while (b_IsMoveActive)
@@ -137,19 +176,99 @@ public class CharacterMovement : MonoBehaviour
             m_RB.linearVelocityX = m_MoveSpeed * m_InMove;
         }
     }
+
+    private IEnumerator C_JumpStatusHandler()
+    {
+        //Enters jump handler.
+        
+        Debug.Log("Inside of jump handler");
+        while (m_JumpState == JumpStates.Ascend) //Starts when the jumpstates is ascend.
+        {
+            Debug.Log("Inside of Ascend");
+
+            for (int i = 0; i < m_AscendLengthCounter + 1; i++) //Loops until i is less than m_AscendLengthCounter.
+            {
+                m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse); //Adds a small force to the character.
+                
+                m_CurrentAscendLength = i; //Should increase the current ascend length to equal i.
+                Debug.Log(m_CurrentAscendLength); //Logs the current length.
+
+                if (m_CurrentAscendLength == m_AscendLengthCounter) //When this is true.
+                {
+                    Debug.Log("Jump state should be Apex.");
+
+                    m_JumpState = JumpStates.Apex; //Changes the jumpstate to apex.
+
+                    m_CurrentAscendLength = 0;
+                    
+                    yield break; //Breaks out.
+                }
+                
+                yield return new WaitForSeconds(0.1f); //Returns to wait 0.1 seconds
+            }
+        }
+
+        if (m_JumpState == JumpStates.Apex)
+        {
+            Debug.Log("Inside of jump apex");
+
+            m_RB.gravityScale = 0.2f;
+
+            for (int i = 0; i < m_JumpApexLengthCounter + 1; i++)
+            {
+                m_CurrentJumpApexLength = i;
+                
+                if (m_CurrentJumpApexLength == m_JumpApexLengthCounter)
+                {
+                    m_JumpState = JumpStates.Falling;
+                    
+                    m_CurrentJumpApexLength = 0;
+
+                    yield break;
+                } 
+                yield return new WaitForSeconds(0.3f);
+            }
+        }
+
+        while (m_JumpState == JumpStates.Falling)
+        {
+            Debug.Log("Inside of falling");
+
+            m_RB.gravityScale = m_RigidBodyGravity;
+
+            if (b_IsGrounded == m_GroundDetector.GroundDetection())
+            {
+                StopCoroutine(C_JumpStatusHandler());
+                
+                m_JumpState = JumpStates.Ascend;
+                
+                yield break;
+            }
+
+        }
+        yield return null;
+    }
     
+    /* Coyote time coroutine.
+     * Detects if the character is grounded by:
+     * 1. Has a certain time passed? This is in order to avoid double jumping.
+     * 2. Is the character on the ground?
+     * 
+     */
     private IEnumerator C_CoyoteJumpCoroutine()
     {
         while (true)
         {
-            //Make it run off a boolean instead.
-            if (m_FrameTimeThreashold > 0.5 && b_IsGrounded && b_IsCoyoteCoroutineActive)
+            //This works on excluding the first few frames after the jump then checks if the bools are true.
+            if (m_FrameTimeThreashold > 0.5 && b_IsGrounded)
             {
                 m_CoyoteTimeCounter = m_CoyoteTimeThreashold;
                 
                 b_IsJumpActive = true;
                 
                 b_IsCoyoteCoroutineActive = false;
+                
+                m_GroundDetector.GroundDetection();
                 
                 StopCoroutine(C_CoyoteJumpCoroutine());
 
@@ -162,7 +281,9 @@ public class CharacterMovement : MonoBehaviour
             yield return new WaitForFixedUpdate();
         }
     }
-
+    /* Jump buffer coroutine.
+     * 
+     */
     private IEnumerator C_JumpBufferCoroutine()
     {
         while (true)
@@ -178,7 +299,9 @@ public class CharacterMovement : MonoBehaviour
                     b_IsCoyoteCoroutineActive = false;
                     b_IsJumpBufferActive = false;
                     
-                    JumpPerformed(null);
+                    m_GroundDetector.GroundDetection();
+                    
+                    JumpPerformed(JumpStates.Ascend);
                     
                     StopCoroutine(C_JumpBufferCoroutine());
                     
@@ -201,13 +324,6 @@ public class CharacterMovement : MonoBehaviour
         }
     }
     #endregion 
-
-    #region Events
-    private void Handle_OnGroundContact(bool obj)
-    {
-        b_IsGrounded = m_GroundDetector.b_IsGrounded;
-    }
-    #endregion
 }
 
 /* Ideas for jump mechanics in movement:
