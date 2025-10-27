@@ -24,7 +24,7 @@ public class InputHandler : MonoBehaviour
         m_ActionMap.Default.MoveHoriz.performed += Handle_SetInMove;
         m_ActionMap.Default.MoveHoriz.canceled += Handle_MoveCancelled;
         m_ActionMap.Default.Jump.performed += Handle_JumpPerformed;
-        m_ActionMap.Default.MoveHoriz.canceled += Handle_JumpCancelled;
+        m_ActionMap.Default.Jump.canceled += Handle_JumpCancelled;
         m_ActionMap.Default.Interact.performed += Handle_InteractPerformed;
     }
 
@@ -35,7 +35,7 @@ public class InputHandler : MonoBehaviour
         m_ActionMap.Default.MoveHoriz.performed -= Handle_SetInMove;
         m_ActionMap.Default.MoveHoriz.canceled -= Handle_MoveCancelled;
         m_ActionMap.Default.Jump.performed -= Handle_JumpPerformed;
-        m_ActionMap.Default.MoveHoriz.canceled -= Handle_JumpCancelled;
+        m_ActionMap.Default.Jump.canceled -= Handle_JumpCancelled;
         m_ActionMap.Default.Interact.performed -= Handle_InteractPerformed;
     }
     #endregion
@@ -53,12 +53,13 @@ public class InputHandler : MonoBehaviour
 
     private void Handle_JumpPerformed(InputAction.CallbackContext context)
     {
-        m_CharacterMovement.JumpPerformed(CharacterMovement.JumpStates.Ascend);
+        m_CharacterMovement.JumpPerformed();
+        //m_CharacterMovement.JumpSetter(CharacterMovement.JumpStates.Ascend);
     }
 
     private void Handle_JumpCancelled(InputAction.CallbackContext context)
     {
-        m_CharacterMovement.JumpPerformed(CharacterMovement.JumpStates.Falling);
+        m_CharacterMovement.JumpSetter(CharacterMovement.JumpStates.Falling);
     }
     
     private void Handle_InteractPerformed(InputAction.CallbackContext context)

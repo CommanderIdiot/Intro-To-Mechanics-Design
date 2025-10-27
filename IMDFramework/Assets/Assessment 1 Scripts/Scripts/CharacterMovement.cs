@@ -56,6 +56,12 @@ public class CharacterMovement : MonoBehaviour
 
     private float m_RigidBodyGravity;
     
+    /* Audio Sources*/
+    [SerializeField] private AudioSource m_JumpingSound;
+    
+    /* Particle Systems */
+    [SerializeField] private ParticleSystem m_JumpingParticleEffect;
+    
     /* Enum */
     public enum JumpStates
     {
@@ -90,7 +96,7 @@ public class CharacterMovement : MonoBehaviour
     }
     #endregion
     
-    #region Move/Jump Functions
+    #region Move/Jump/Jump Setter Functions
 
     public void SetInMove(float direction)
     {
@@ -110,19 +116,35 @@ public class CharacterMovement : MonoBehaviour
         }
     }
 
-    public void JumpPerformed(JumpStates jumpStates)
+    public void JumpPerformed()
     {
         b_IsGrounded = m_GroundDetector.GroundDetection();
         Debug.Log("IsGrounded equals "  + b_IsGrounded);
         
-        m_JumpState = jumpStates;
-        
             if (b_IsGrounded || m_CoyoteTimeCounter > 0)
             {
-                //have the ground sensor called in here
-            
-                //Need to account for falling and coyote jump being executable during this time.
+                #region Assignment 2 Audio/Particle Parts
 
+                /* Checks if there is an audio source, then plays the sound if there is one.
+                 * Checks if there is a particle system, then plays the effect if there is one.
+                 * This is only included as it is needed in assignment 2, but I've put character movement in my assignment 1
+                 * script folder.
+                 */
+                
+                if (GetComponentInParent<AudioSource>() != null)
+                {
+                    m_JumpingSound.Play();
+                    Debug.Log("Insert jump sound here");
+                }
+
+                if (m_JumpingParticleEffect != null)
+                {
+                    m_JumpingParticleEffect.Play();
+                    Debug.Log("Insert jump effect here"); 
+                }
+
+                #endregion
+                
                 Debug.Log("Entered IsGrounded || Coyote time counter > 0");
                 StartCoroutine(C_JumpStatusHandler()); //Starts the jump handler.
 
@@ -141,12 +163,17 @@ public class CharacterMovement : MonoBehaviour
                 }*/
             }
             //Performs if the jump buffer is not active
-            else if (!b_IsJumpBufferActive)
+            /*else if (!b_IsJumpBufferActive)
             {
                 b_IsJumpBufferActive = true;
             
                 StartCoroutine(C_JumpBufferCoroutine());
-            }
+            }*/
+    }
+
+    public void JumpSetter(JumpStates jumpStates) //Just receives and sets the jump status from the input handler.
+    {
+        m_JumpState = JumpStates.Falling;
     }
     
     #endregion
@@ -182,15 +209,16 @@ public class CharacterMovement : MonoBehaviour
         //Enters jump handler.
         
         Debug.Log("Inside of jump handler");
+        m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse); //Adds a small force to the character.
+
+        
         while (m_JumpState == JumpStates.Ascend) //Starts when the jumpstates is ascend.
         {
             Debug.Log("Inside of Ascend");
-
-            for (int i = 0; i < m_AscendLengthCounter + 1; i++) //Loops until i is less than m_AscendLengthCounter.
-            {
-                m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse); //Adds a small force to the character.
+            
+                m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Force); //Adds a small force to the character.
                 
-                m_CurrentAscendLength = i; //Should increase the current ascend length to equal i.
+                m_CurrentAscendLength++; //Should increase the current ascend length to equal i.
                 Debug.Log(m_CurrentAscendLength); //Logs the current length.
 
                 if (m_CurrentAscendLength == m_AscendLengthCounter) //When this is true.
@@ -204,8 +232,7 @@ public class CharacterMovement : MonoBehaviour
                     yield break; //Breaks out.
                 }
                 
-                yield return new WaitForSeconds(0.1f); //Returns to wait 0.1 seconds
-            }
+                yield return new WaitForFixedUpdate(); //Returns to wait 0.1 seconds
         }
 
         if (m_JumpState == JumpStates.Apex)
@@ -238,13 +265,13 @@ public class CharacterMovement : MonoBehaviour
 
             if (b_IsGrounded == m_GroundDetector.GroundDetection())
             {
-                StopCoroutine(C_JumpStatusHandler());
-                
                 m_JumpState = JumpStates.Ascend;
+                
+                StopCoroutine(C_JumpStatusHandler());
                 
                 yield break;
             }
-
+            yield return new WaitForFixedUpdate();
         }
         yield return null;
     }
@@ -301,7 +328,7 @@ public class CharacterMovement : MonoBehaviour
                     
                     m_GroundDetector.GroundDetection();
                     
-                    JumpPerformed(JumpStates.Ascend);
+                    JumpPerformed();
                     
                     StopCoroutine(C_JumpBufferCoroutine());
                     
