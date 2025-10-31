@@ -59,7 +59,7 @@ public class InputHandler : MonoBehaviour
 
     private void Handle_JumpCancelled(InputAction.CallbackContext context)
     {
-        m_CharacterMovement.JumpSetter(CharacterMovement.JumpStates.Falling);
+        m_CharacterMovement.JumpFallSetter(CharacterMovement.JumpStates.Falling);
     }
     
     private void Handle_InteractPerformed(InputAction.CallbackContext context)
