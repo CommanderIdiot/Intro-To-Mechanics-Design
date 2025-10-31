@@ -31,9 +31,12 @@ public class CharacterMovement : MonoBehaviour
     
     private bool b_IsJumpActive = true;
 
-    private bool b_IsJumpBufferActive = false;
+    private bool b_IsJumpBufferActive;
     
     private bool b_IsMoveActive;
+
+    private bool b_IsCheckingFallActive;
+    private bool b_IsFalling;
     
     /* Ints */
     [SerializeField] private int m_AscendLengthCounter;
@@ -63,6 +66,8 @@ public class CharacterMovement : MonoBehaviour
     /* Particle Systems */
     [SerializeField] private ParticleSystem m_JumpingParticleEffect;
     
+    //Try to add some camera shake when landing
+    
     /* Enum */
     public enum JumpStates
     {
@@ -75,7 +80,7 @@ public class CharacterMovement : MonoBehaviour
 
     #endregion
     
-    #region Awake/Start/OnDestroy Functions
+    #region Functions
 
     private void Awake()
     {
@@ -95,9 +100,6 @@ public class CharacterMovement : MonoBehaviour
         m_RigidBodyGravity = m_RB.gravityScale;
         Debug.Log("Gravity scale saved.");
     }
-    #endregion
-    
-    #region Move/Jump/Jump Setter Functions
 
     public void SetInMove(float direction)
     {
@@ -112,17 +114,20 @@ public class CharacterMovement : MonoBehaviour
             if(b_IsMoveActive) { return;}
             
             b_IsMoveActive = true;
+            b_IsCheckingFallActive = true;
+            
+            StartCoroutine(C_MovementUpdate());
+            //StartCoroutine(C_FallChecker());
 
-            m_MoveCoroutine = StartCoroutine(C_MovementUpdate());
         }
     }
 
     public void JumpPerformed()
     {
         b_IsGrounded = m_GroundDetector.GroundDetection();
-        Debug.Log("IsGrounded equals "  + b_IsGrounded);
+        //Debug.Log("IsGrounded equals "  + b_IsGrounded);
         
-            if (b_IsGrounded || m_CoyoteTimeCounter > 0)
+            if (m_GroundDetector.GroundDetection() || m_CoyoteTimeCounter > 0)
             {
                 #region Assignment 2 Audio/Particle Parts
 
@@ -190,11 +195,6 @@ public class CharacterMovement : MonoBehaviour
         {
             yield return new WaitForFixedUpdate();
             m_RB.linearVelocityX = m_MoveSpeed * m_InMove;
-
-            if (m_RB.linearVelocityY > m_RB.gravityScale)
-            {
-                StartCoroutine(C_CoyoteJumpCoroutine());
-            }
         }
     }
 
@@ -207,7 +207,7 @@ public class CharacterMovement : MonoBehaviour
         {
                 m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Force); //Adds a small force to the character.
                 
-                m_CurrentAscendLength++; //Should increase the current ascend length to equal i.
+                m_CurrentAscendLength++; //Increase the current ascend length to equal itself plus 1.
                 if (m_CurrentAscendLength == m_AscendLengthCounter) //When this is true.
                 {
                     m_JumpState = JumpStates.Apex; //Changes the jumpstate to apex.
@@ -217,12 +217,12 @@ public class CharacterMovement : MonoBehaviour
                     yield break; //Breaks out.
                 }
                 
-                yield return new WaitForFixedUpdate(); //Returns to wait 0.1 seconds
+                yield return new WaitForFixedUpdate();
         }
 
         if (m_JumpState == JumpStates.Apex)
         {
-            Debug.Log("Inside of jump apex");
+            //Debug.Log("Inside of jump apex");
 
             m_RB.gravityScale = 0.2f;
 
@@ -244,11 +244,11 @@ public class CharacterMovement : MonoBehaviour
 
         while (m_JumpState == JumpStates.Falling)
         {
-            Debug.Log("Inside of falling");
+            //Debug.Log("Inside of falling");
 
             m_RB.gravityScale = 1.0f;
 
-            if (b_IsGrounded == m_GroundDetector.GroundDetection())
+            if (m_GroundDetector.GroundDetection())
             {
                 m_JumpState = JumpStates.Ascend;
                 
@@ -259,6 +259,22 @@ public class CharacterMovement : MonoBehaviour
             yield return new WaitForFixedUpdate();
         }
         yield return null;
+    }
+    
+    private IEnumerator C_FallChecker()
+    {
+        while (b_IsCheckingFallActive)
+        {
+            Debug.Log("Checking for fall");
+            if (m_RB.linearVelocityY > m_RB.gravityScale)
+            {
+                StartCoroutine(C_CoyoteJumpCoroutine());
+                
+                b_IsCheckingFallActive = false;
+            }
+            
+            yield return new WaitForFixedUpdate();
+        }
     }
     
     /* Coyote time coroutine.
@@ -272,7 +288,7 @@ public class CharacterMovement : MonoBehaviour
         while (b_IsCoyoteCoroutineActive)
         {
             //This works on excluding the first few frames after the jump then checks if the bools are true.
-            if (m_FrameTimeThreashold > 0.5 && b_IsGrounded)
+            if (m_FrameTimeThreashold > 0.5 && m_GroundDetector.GroundDetection())
             {
                 m_CoyoteTimeCounter = m_CoyoteTimeThreashold;
                 
@@ -304,16 +320,17 @@ public class CharacterMovement : MonoBehaviour
             yield return new WaitForFixedUpdate();
         }
     }
+    
     /* Jump buffer coroutine.
      * 
      */
     private IEnumerator C_JumpBufferCoroutine()
     {
-        while (true)
+        while (b_IsJumpBufferActive)
         {
             if (m_JumpBufferTimeCounter <= m_JumpBufferThreashold)
             {
-                if (b_IsGrounded && b_IsJumpActive)
+                if (m_GroundDetector.GroundDetection() && b_IsJumpActive)
                 {
                     m_JumpBufferTimeCounter = 0;
                     
@@ -321,8 +338,6 @@ public class CharacterMovement : MonoBehaviour
                     
                     b_IsCoyoteCoroutineActive = false;
                     b_IsJumpBufferActive = false;
-                    
-                    m_GroundDetector.GroundDetection();
                     
                     JumpPerformed();
                     

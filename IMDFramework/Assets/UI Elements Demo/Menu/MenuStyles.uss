@@ -1,0 +1,22 @@
+:root {
+}
+
+.button {
+    color: rgb(255, 255, 255);
+    background-color: rgb(46, 43, 43);
+    border-left-color: rgb(46, 43, 43);
+    border-right-color: rgb(46, 43, 43);
+    border-top-color: rgb(46, 43, 43);
+    border-bottom-color: rgb(46, 43, 43);
+}
+
+.button:hover {
+    width: 115%;
+    height: 65%;
+    justify-content: center;
+    align-self: center;
+    align-content: flex-start;
+    transition-duration: 0s;
+    transition-delay: 0s;
+    background-color: rgb(99, 91, 91);
+}
