@@ -51,9 +51,12 @@ public class CharacterMovement : MonoBehaviour
     private float m_InMove;
     
     [SerializeField] private float m_CoyoteTimeThreashold = 0.4f;
-    [SerializeField] float m_JumpPowerTimer;
     private float m_CoyoteTimeCounter;
-    private float m_FrameTimeThreashold = 0;
+    private float m_MinimumAmountFramesSinceOffGround = 0;
+
+    
+    [SerializeField] float m_JumpPowerTimer;
+
 
     [SerializeField] private float m_JumpBufferThreashold = 0.4f;
     private float m_JumpBufferTimeCounter;
@@ -116,6 +119,8 @@ public class CharacterMovement : MonoBehaviour
             b_IsMoveActive = true;
             b_IsCheckingFallActive = true;
             
+            m_CoyoteTimeCounter = 0;
+            
             StartCoroutine(C_MovementUpdate());
             //StartCoroutine(C_FallChecker());
 
@@ -127,7 +132,7 @@ public class CharacterMovement : MonoBehaviour
         b_IsGrounded = m_GroundDetector.GroundDetection();
         //Debug.Log("IsGrounded equals "  + b_IsGrounded);
         
-            if (m_GroundDetector.GroundDetection() || m_CoyoteTimeCounter > 0)
+            if (m_GroundDetector.GroundDetection() || m_CoyoteTimeCounter >= 0 && m_CoyoteTimeCounter <= m_CoyoteTimeThreashold)
             {
                 #region Assignment 2 Audio/Particle Parts
 
@@ -150,19 +155,23 @@ public class CharacterMovement : MonoBehaviour
                 }
 
                 #endregion
+
+                if (b_IsJumpActive)
+                {
+                    m_CoyoteTimeCounter = 0;
+                    m_MinimumAmountFramesSinceOffGround = 0;
                 
-                m_CoyoteTimeCounter = 0;
-                m_FrameTimeThreashold = 0;
-                
-                StartCoroutine(C_JumpStatusHandler()); //Starts the jump status handler.
+                    StartCoroutine(C_JumpStatusHandler()); //Starts the jump status handler.
+                }
+
             }
             //Performs if the jump buffer is not active
-            /*else if (!b_IsJumpBufferActive)
+            else if (!b_IsJumpBufferActive)
             {
                 b_IsJumpBufferActive = true;
             
                 StartCoroutine(C_JumpBufferCoroutine());
-            }*/
+            }
     }
 
     public void JumpFallSetter(JumpStates jumpStates) //Just receives and sets the jump status from the input handler.
@@ -195,6 +204,17 @@ public class CharacterMovement : MonoBehaviour
         {
             yield return new WaitForFixedUpdate();
             m_RB.linearVelocityX = m_MoveSpeed * m_InMove;
+            
+                      if (m_RB.linearVelocityY < 0 && !m_GroundDetector.GroundDetection())
+                        {
+                            //Debug.Log("Falling - Fall Checker.");
+                            
+                            b_IsCoyoteCoroutineActive = true;
+                            
+                            StartCoroutine(C_CoyoteJumpCoroutine());
+                            
+                            //b_IsCheckingFallActive = false;
+                        }
         }
     }
 
@@ -265,14 +285,17 @@ public class CharacterMovement : MonoBehaviour
     {
         while (b_IsCheckingFallActive)
         {
-            Debug.Log("Checking for fall");
-            if (m_RB.linearVelocityY > m_RB.gravityScale)
+            if (m_RB.linearVelocityY < 0)
             {
                 StartCoroutine(C_CoyoteJumpCoroutine());
                 
                 b_IsCheckingFallActive = false;
             }
-            
+
+            if (m_GroundDetector.GroundDetection())
+            {
+                b_IsCheckingFallActive = false;
+            }
             yield return new WaitForFixedUpdate();
         }
     }
@@ -288,34 +311,35 @@ public class CharacterMovement : MonoBehaviour
         while (b_IsCoyoteCoroutineActive)
         {
             //This works on excluding the first few frames after the jump then checks if the bools are true.
-            if (m_FrameTimeThreashold > 0.5 && m_GroundDetector.GroundDetection())
+            if (m_MinimumAmountFramesSinceOffGround > 0.5 && !m_GroundDetector.GroundDetection())
             {
-                m_CoyoteTimeCounter = m_CoyoteTimeThreashold;
-                
-                b_IsJumpActive = true;
-                
-                b_IsCoyoteCoroutineActive = false;
-                
-                m_GroundDetector.GroundDetection();
-                
-                StartCoroutine(C_JumpStatusHandler());
-                
-                StopCoroutine(C_CoyoteJumpCoroutine());
+                if (0 >= m_CoyoteTimeCounter && m_CoyoteTimeCounter <= m_CoyoteTimeThreashold)
+                {
+                    Debug.Log("Coyote jump worked.");
 
-                break;
-            }
-
-            if (m_CoyoteTimeCounter <= 0)
-            {
-                StopCoroutine(C_CoyoteJumpCoroutine());
-
-                b_IsCoyoteCoroutineActive = false;
+                    b_IsCoyoteCoroutineActive = false;
+                    
+                    JumpPerformed();
+                    
+                    StopCoroutine(C_CoyoteJumpCoroutine());
+                    
+                    break;
+                }
                 
-                break;
+                if (m_CoyoteTimeThreashold >= m_CoyoteTimeThreashold )
+                {
+                    Debug.Log("Coyote jum failed.");
+
+                    b_IsCoyoteCoroutineActive = false;
+
+                    StopCoroutine(C_CoyoteJumpCoroutine());
+                    
+                    break;
+                }
             }
             
-            m_CoyoteTimeCounter -= Time.deltaTime;
-            m_FrameTimeThreashold += Time.deltaTime;
+            m_CoyoteTimeCounter += Time.deltaTime;
+            m_MinimumAmountFramesSinceOffGround += Time.deltaTime;
 
             yield return new WaitForFixedUpdate();
         }
@@ -341,8 +365,6 @@ public class CharacterMovement : MonoBehaviour
                     
                     JumpPerformed();
                     
-                    StopCoroutine(C_JumpBufferCoroutine());
-                    
                     break; 
                 }
             }
@@ -351,8 +373,6 @@ public class CharacterMovement : MonoBehaviour
                 m_JumpBufferTimeCounter = 0;
                 
                 b_IsJumpBufferActive = false;
-                
-                StopCoroutine(C_JumpBufferCoroutine());
                 
                 break;
             }
