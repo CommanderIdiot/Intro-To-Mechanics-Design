@@ -34,6 +34,7 @@ public class CharacterMovement : MonoBehaviour
     private bool b_IsJumpBufferActive;
     
     private bool b_IsMoveActive;
+    private bool b_TempIsJumpActive;
 
     private bool b_IsCheckingFallActive;
     private bool b_IsFalling;
@@ -70,6 +71,7 @@ public class CharacterMovement : MonoBehaviour
     [SerializeField] private ParticleSystem m_JumpingParticleEffect;
     
     //Try to add some camera shake when landing
+    //Have a camera variable / storage which is got in awake if it is possible to find one?
     
     /* Enum */
     public enum JumpStates
@@ -123,7 +125,6 @@ public class CharacterMovement : MonoBehaviour
             
             StartCoroutine(C_MovementUpdate());
             //StartCoroutine(C_FallChecker());
-
         }
     }
 
@@ -141,7 +142,8 @@ public class CharacterMovement : MonoBehaviour
                  * This is only included as it is needed in assignment 2, but I've put character movement in my assignment 1
                  * script folder.
                  */
-                
+                //Maybe add camera shake in here to add juice about landing on the ground?
+
                 if (GetComponentInParent<AudioSource>() != null)
                 {
                     m_JumpingSound.Play();
@@ -181,12 +183,12 @@ public class CharacterMovement : MonoBehaviour
     
     #endregion
 
-    /* make a jump handler coroutine STARTED
-     * have it use a while loop for rising that adds a force mode 2d . force STARTED
-     * if for the apex
-     * a while until it touches the ground to stop the coroutine
-     * reset state after jump is finished
-     * add a jump cancel event into input handler to cancel the jump
+    /* make a jump handler coroutine COMPLETED
+     * have it use a while loop for rising that adds a force mode 2d . force COMPLETED
+     * if for the apex COMPLETED
+     * a while until it touches the ground to stop the coroutine 
+     * reset state after jump is finished COMPLETED
+     * add a jump cancel event into input handler to cancel the jump COMPLETED
      *
      * get ground detector found in awake COMPLETED
      * then call the function to return the detection as true or false COMPLETED
@@ -205,13 +207,16 @@ public class CharacterMovement : MonoBehaviour
             yield return new WaitForFixedUpdate();
             m_RB.linearVelocityX = m_MoveSpeed * m_InMove;
             
-                      if (m_RB.linearVelocityY < 0 && !m_GroundDetector.GroundDetection())
+            /*Stupid idea:
+             * have fall checker run if jump is active.
+             */
+                      if (b_IsJumpActive && !b_IsCheckingFallActive && !m_GroundDetector.GroundDetection())
                         {
                             //Debug.Log("Falling - Fall Checker.");
                             
-                            b_IsCoyoteCoroutineActive = true;
+                            b_IsCheckingFallActive = true;
                             
-                            StartCoroutine(C_CoyoteJumpCoroutine());
+                            StartCoroutine(C_FallChecker());
                             
                             //b_IsCheckingFallActive = false;
                         }
@@ -285,11 +290,20 @@ public class CharacterMovement : MonoBehaviour
     {
         while (b_IsCheckingFallActive)
         {
+            /* Clean this up a bit
+             * Add some more safeguards? In order to try and prevent coyote time being spammed
+             */
+            
             if (m_RB.linearVelocityY < 0)
             {
-                StartCoroutine(C_CoyoteJumpCoroutine());
+                if (!b_IsCoyoteCoroutineActive)
+                {
+                    b_IsCoyoteCoroutineActive = true;
+                    
+                    StartCoroutine(C_CoyoteJumpCoroutine());
                 
-                b_IsCheckingFallActive = false;
+                    b_IsCheckingFallActive = false;
+                }
             }
 
             if (m_GroundDetector.GroundDetection())
@@ -304,7 +318,6 @@ public class CharacterMovement : MonoBehaviour
      * Detects if the character is grounded by:
      * 1. Has a certain time passed? This is in order to avoid double jumping.
      * 2. Is the character on the ground?
-     * 
      */
     private IEnumerator C_CoyoteJumpCoroutine()
     {
@@ -315,22 +328,29 @@ public class CharacterMovement : MonoBehaviour
             {
                 if (0 >= m_CoyoteTimeCounter && m_CoyoteTimeCounter <= m_CoyoteTimeThreashold)
                 {
-                    Debug.Log("Coyote jump worked.");
+                    if (b_IsJumpActive)
+                    {
+                        Debug.Log("Coyote jump worked.");
 
-                    b_IsCoyoteCoroutineActive = false;
+                        b_IsCoyoteCoroutineActive = false;
                     
-                    JumpPerformed();
+                        JumpPerformed();
                     
-                    StopCoroutine(C_CoyoteJumpCoroutine());
+                        b_IsJumpActive = false;
+                    
+                        StopCoroutine(C_CoyoteJumpCoroutine());
+                    }
                     
                     break;
                 }
                 
                 if (m_CoyoteTimeThreashold >= m_CoyoteTimeThreashold )
                 {
-                    Debug.Log("Coyote jum failed.");
+                    Debug.Log("Coyote jump failed.");
 
                     b_IsCoyoteCoroutineActive = false;
+
+                    m_CoyoteTimeCounter = 0;
 
                     StopCoroutine(C_CoyoteJumpCoroutine());
                     
