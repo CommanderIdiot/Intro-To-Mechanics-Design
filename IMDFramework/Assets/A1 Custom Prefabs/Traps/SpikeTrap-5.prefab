@@ -148,6 +148,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SpikeDamage: 5
+  m_CameraShakeMagnitude: 0
+  m_CameraShakeDuration: 0
 --- !u!1 &2725575408327037092
 GameObject:
   m_ObjectHideFlags: 0
@@ -245,6 +247,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SpikeDamage: 5
+  m_CameraShakeMagnitude: 0.2
+  m_CameraShakeDuration: 0.2
 --- !u!1 &3684404866260226950
 GameObject:
   m_ObjectHideFlags: 0
@@ -393,6 +397,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SpikeDamage: 5
+  m_CameraShakeMagnitude: 0
+  m_CameraShakeDuration: 0
 --- !u!1 &4938679673465236940
 GameObject:
   m_ObjectHideFlags: 0
@@ -541,6 +547,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SpikeDamage: 5
+  m_CameraShakeMagnitude: 0
+  m_CameraShakeDuration: 0
 --- !u!1 &5548524858574607975
 GameObject:
   m_ObjectHideFlags: 0
@@ -689,6 +697,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SpikeDamage: 5
+  m_CameraShakeMagnitude: 0
+  m_CameraShakeDuration: 0
 --- !u!1 &8154274565235273563
 GameObject:
   m_ObjectHideFlags: 0
@@ -837,3 +847,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SpikeDamage: 5
+  m_CameraShakeMagnitude: 0
+  m_CameraShakeDuration: 0

@@ -16,7 +16,10 @@ public class AudioComponent : MonoBehaviour
     private bool b_IsPlayingAudio;
     
     /* Ints. */
-    private int AudioArrayIndexPointer = 0;
+    private int m_AudioArrayIndexPointer;
+    
+    /* Floats. */
+    private float m_AudioClipLength;
     
     /* Coroutine. */
     private Coroutine m_PlayingAudio;
@@ -24,33 +27,50 @@ public class AudioComponent : MonoBehaviour
     public AudioClip[] AudioClipArray;
     
     #endregion
-    
+
+    private void Awake()
+    {
+        if (GetComponentInParent<AudioSource>() != null)
+        {
+            m_AudioSource = GetComponent<AudioSource>();
+        };
+    }
     
     public void PlaySound(int AudioClipIndex)
     {
-        if (AudioClipIndex != null)
+        if (m_AudioSource.clip != null)
         {
-            AudioArrayIndexPointer = AudioClipIndex;
+            m_AudioArrayIndexPointer = AudioClipIndex;
+            
+            m_AudioClipLength = AudioClipArray[m_AudioArrayIndexPointer].length;
         }
         
-        m_AudioSource.clip = AudioClipArray[AudioArrayIndexPointer];
+        m_AudioSource.clip = AudioClipArray[m_AudioArrayIndexPointer];
         
         m_AudioSource.Play();
         
-        //b_IsPlayingAudio = true;
-        //StartCoroutine(C_PlayingAudio());
+        b_IsPlayingAudio = true;
+        StartCoroutine(C_PlayingAudio());
     }
 
     private void StopPlaySound()
     {
         m_AudioSource.clip = null;
+        b_IsPlayingAudio = false;
     }
     
     private IEnumerator C_PlayingAudio()
     {
         while (b_IsPlayingAudio)
         {
-            yield return new  WaitForEndOfFrame();
+            yield return new  WaitForSecondsRealtime(m_AudioClipLength);
+            
+            StopPlaySound();
         }
     }
 }
+
+/*Plan:
+ * 1. Make a coroutine to play the sound fully.
+ * 2. Make a function that just has the sound ID passed in to reduce amount of repeated code.
+ */

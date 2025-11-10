@@ -104,21 +104,16 @@ public class CharacterMovement : MonoBehaviour
         if (GetComponentInParent<GroundDetector>() != null)
         {
             m_GroundDetector = GetComponent<GroundDetector>();
-            Debug.Log("Ground detector attached");
         }
 
         if (GetComponentInParent<CameraShake>() != null)
         {
             m_PlayerCamera = GetComponent<CameraShake>();
-            Debug.Log("Camera shake attached");
-
         }
 
         if (GetComponentInParent<AudioComponent>() != null)
         {
             m_AudioComponent = GetComponent<AudioComponent>();
-            Debug.Log("Audio component attached");
-
         }
 
         m_RB = GetComponent<Rigidbody2D>();
@@ -127,7 +122,6 @@ public class CharacterMovement : MonoBehaviour
     private void Start()
     {
         m_RigidBodyGravity = m_RB.gravityScale;
-        Debug.Log("Gravity scale saved.");
     }
 
     public void SetInMove(float direction)
@@ -176,14 +170,10 @@ public class CharacterMovement : MonoBehaviour
                 if (m_JumpingParticleEffect != null)
                 {
                     m_JumpingParticleEffect.Play();
-                    Debug.Log("Insert jump effect here"); 
                 }
                 
-                if (m_AudioComponent != null)
-                {
-                    m_AudioComponent.PlaySound(m_JumpingSoundID);
-                    Debug.Log("Insert jump sound here");
-                }
+                SoundCaller(m_JumpingSoundID);
+                
                 #endregion
 
                 if (b_IsJumpActive)
@@ -207,6 +197,14 @@ public class CharacterMovement : MonoBehaviour
     public void JumpFallSetter(JumpStates jumpStates) //Just receives and sets the jump status from the input handler.
     {
         m_JumpState = JumpStates.Falling;
+    }
+
+    public void SoundCaller(int m_SoundID)
+    {
+        if (m_AudioComponent != null)
+        {
+            m_AudioComponent.PlaySound(m_SoundID);
+        }
     }
     
     #endregion
@@ -234,6 +232,8 @@ public class CharacterMovement : MonoBehaviour
         {
             yield return new WaitForFixedUpdate();
             m_RB.linearVelocityX = m_MoveSpeed * m_InMove;
+
+            SoundCaller(m_WalkingSoundID);
             
             /*Stupid idea:
              * have fall checker run if jump is active.
@@ -305,6 +305,9 @@ public class CharacterMovement : MonoBehaviour
             {
                 m_JumpState = JumpStates.Ascend;
                 
+                SoundCaller(m_LandingSoundID);
+
+                
                 StopCoroutine(C_JumpStatusHandler());
                 
                 yield break;
@@ -358,8 +361,6 @@ public class CharacterMovement : MonoBehaviour
                 {
                     if (b_IsJumpActive)
                     {
-                        Debug.Log("Coyote jump worked.");
-
                         b_IsCoyoteCoroutineActive = false;
                     
                         JumpPerformed();
@@ -374,8 +375,6 @@ public class CharacterMovement : MonoBehaviour
                 
                 if (m_CoyoteTimeThreashold >= m_CoyoteTimeThreashold )
                 {
-                    Debug.Log("Coyote jump failed.");
-
                     b_IsCoyoteCoroutineActive = false;
 
                     m_CoyoteTimeCounter = 0;

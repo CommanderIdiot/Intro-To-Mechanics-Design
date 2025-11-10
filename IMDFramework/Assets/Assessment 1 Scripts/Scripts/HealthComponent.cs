@@ -9,7 +9,9 @@ public class HealthComponent : MonoBehaviour
     [SerializeField] private float m_MaxHealth;
     private float m_CurrentHealth;
 
-    private void start()
+    [SerializeField] private ParticleSystem m_InjuryParticleSystem;
+    
+    private void Start()
     {
         m_CurrentHealth = m_MaxHealth;
     }
@@ -18,6 +20,8 @@ public class HealthComponent : MonoBehaviour
     {
         float HealthChange = Mathf.Min(m_CurrentHealth, Damage);
         m_CurrentHealth -= HealthChange;
+        
+        m_InjuryParticleSystem.Play();
         
         OnDamaged?.Invoke(m_CurrentHealth, m_MaxHealth, Damage);
         if (m_CurrentHealth == 0)
