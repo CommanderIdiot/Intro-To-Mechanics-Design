@@ -76,12 +76,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3de5457bbdd14e842b5a6928e26b3331, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_MoveSpeed: 5
-  m_JumpStrength: 10
-  m_RaycastPosition: {fileID: 5816422030429470223}
   m_GroundLayer:
     serializedVersion: 2
     m_Bits: 8
+  m_AscendLengthCounter: 0
+  m_JumpApexLengthCounter: 0
+  m_MoveSpeed: 5
+  m_JumpStrength: 10
+  m_CoyoteTimeThreashold: 0.4
+  m_JumpPowerTimer: 0
+  m_JumpBufferThreashold: 0.4
+  m_JumpingSound: {fileID: 0}
+  m_JumpingParticleEffect: {fileID: 0}
+  m_CameraShakeMagnitude: 0
+  m_CameraShakeDuration: 0
 --- !u!1 &2062927974038001864
 GameObject:
   m_ObjectHideFlags: 0

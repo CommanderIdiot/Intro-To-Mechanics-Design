@@ -7,13 +7,16 @@ using Debug = UnityEngine.Debug;
 public class CharacterMovement : MonoBehaviour
 {
     #region Variables
+    [SerializeField] public LayerMask m_GroundLayer;
+    
+    /* Other Scripts/Compoonents.*/
     private Rigidbody2D m_RB;
     
-    [SerializeField] public LayerMask m_GroundLayer;
-
     private PlayerControls m_ActionMap;
     
     private GroundDetector m_GroundDetector;
+    
+    private AudioComponent m_AudioComponent;
 
     /* Coroutines. */
     private Coroutine m_CoyoteJumpCoroutine;
@@ -43,6 +46,11 @@ public class CharacterMovement : MonoBehaviour
     [SerializeField] private int m_AscendLengthCounter;
     private int m_CurrentAscendLength;
     
+    [SerializeField] private int m_JumpingSoundID;
+    [SerializeField] private int m_LandingSoundID;
+    [SerializeField] private int m_WalkingSoundID;
+
+    
     [SerializeField] private int m_JumpApexLengthCounter;
     private int m_CurrentJumpApexLength;
     
@@ -54,24 +62,27 @@ public class CharacterMovement : MonoBehaviour
     [SerializeField] private float m_CoyoteTimeThreashold = 0.4f;
     private float m_CoyoteTimeCounter;
     private float m_MinimumAmountFramesSinceOffGround = 0;
-
     
     [SerializeField] float m_JumpPowerTimer;
-
-
+    
     [SerializeField] private float m_JumpBufferThreashold = 0.4f;
     private float m_JumpBufferTimeCounter;
 
     private float m_RigidBodyGravity;
     
-    /* Audio Sources*/
+    /* Audio Sources
     [SerializeField] private AudioSource m_JumpingSound;
+    [SerializeField] private AudioSource m_LandingSound;
+    [SerializeField] private AudioSource m_WalkingSound; */
     
     /* Particle Systems */
     [SerializeField] private ParticleSystem m_JumpingParticleEffect;
     
-    //Try to add some camera shake when landing
-    //Have a camera variable / storage which is got in awake if it is possible to find one?
+    /* Camera */
+    private CameraShake m_PlayerCamera;
+    
+    [SerializeField] private float m_CameraShakeMagnitude;
+    [SerializeField] private float m_CameraShakeDuration;
     
     /* Enum */
     public enum JumpStates
@@ -82,7 +93,6 @@ public class CharacterMovement : MonoBehaviour
     }
     
     private JumpStates m_JumpState = JumpStates.Ascend;
-
     #endregion
     
     #region Functions
@@ -95,6 +105,20 @@ public class CharacterMovement : MonoBehaviour
         {
             m_GroundDetector = GetComponent<GroundDetector>();
             Debug.Log("Ground detector attached");
+        }
+
+        if (GetComponentInParent<CameraShake>() != null)
+        {
+            m_PlayerCamera = GetComponent<CameraShake>();
+            Debug.Log("Camera shake attached");
+
+        }
+
+        if (GetComponentInParent<AudioComponent>() != null)
+        {
+            m_AudioComponent = GetComponent<AudioComponent>();
+            Debug.Log("Audio component attached");
+
         }
 
         m_RB = GetComponent<Rigidbody2D>();
@@ -144,18 +168,22 @@ public class CharacterMovement : MonoBehaviour
                  */
                 //Maybe add camera shake in here to add juice about landing on the ground?
 
-                if (GetComponentInParent<AudioSource>() != null)
+                if (m_PlayerCamera != null)
                 {
-                    m_JumpingSound.Play();
-                    Debug.Log("Insert jump sound here");
+                    m_PlayerCamera.ShakeCamera(m_CameraShakeMagnitude, m_CameraShakeDuration);
                 }
-
+                
                 if (m_JumpingParticleEffect != null)
                 {
                     m_JumpingParticleEffect.Play();
                     Debug.Log("Insert jump effect here"); 
                 }
-
+                
+                if (m_AudioComponent != null)
+                {
+                    m_AudioComponent.PlaySound(m_JumpingSoundID);
+                    Debug.Log("Insert jump sound here");
+                }
                 #endregion
 
                 if (b_IsJumpActive)
