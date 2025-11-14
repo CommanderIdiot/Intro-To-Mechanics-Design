@@ -41,6 +41,11 @@ public class CharacterMovement : MonoBehaviour
 
     private bool b_IsCheckingFallActive;
     private bool b_IsFalling;
+
+    private bool b_JumpingAudioLoop = false;
+    private bool b_LandingAudioLoop = false;
+    private bool b_WalkingAudioLoop;
+
     
     /* Ints */
     [SerializeField] private int m_AscendLengthCounter;
@@ -122,7 +127,7 @@ public class CharacterMovement : MonoBehaviour
     public void SetInMove(float direction)
     {
         m_InMove = direction;
-
+        
         if (m_InMove == 0)
         {
             b_IsMoveActive = false;
@@ -133,6 +138,9 @@ public class CharacterMovement : MonoBehaviour
             
             b_IsMoveActive = true;
             b_IsCheckingFallActive = true;
+            
+            SoundCaller(m_WalkingSoundID, b_WalkingAudioLoop);
+
             
             m_CoyoteTimeCounter = 0;
             
@@ -167,7 +175,7 @@ public class CharacterMovement : MonoBehaviour
                     m_JumpingParticleEffect.Play();
                 }
                 
-                SoundCaller(m_JumpingSoundID);
+                SoundCaller(m_JumpingSoundID, b_JumpingAudioLoop);
                 
                 #endregion
 
@@ -194,11 +202,18 @@ public class CharacterMovement : MonoBehaviour
         m_JumpState = JumpStates.Falling;
     }
 
-    public void SoundCaller(int m_SoundID)
+    public void SoundCaller(int m_SoundID, bool m_IsLooping)
     {
         if (m_AudioComponent != null)
         {
-            m_AudioComponent.PlaySound(m_SoundID);
+            if (!m_IsLooping)
+            {
+                m_AudioComponent.PlaySound(m_SoundID);
+            }
+            else if (m_IsLooping)
+            {
+                m_AudioComponent.PlayLoopSound(m_SoundID);
+            }
         }
     }
     
@@ -227,8 +242,6 @@ public class CharacterMovement : MonoBehaviour
         {
             yield return new WaitForFixedUpdate();
             m_RB.linearVelocityX = m_MoveSpeed * m_InMove;
-
-            SoundCaller(m_WalkingSoundID);
             
                       if (b_IsJumpActive && !b_IsCheckingFallActive && !m_GroundDetector.GroundDetection())
                         {
@@ -297,7 +310,7 @@ public class CharacterMovement : MonoBehaviour
             {
                 m_JumpState = JumpStates.Ascend;
                 
-                SoundCaller(m_LandingSoundID);
+                SoundCaller(m_LandingSoundID, b_LandingAudioLoop);
 
                 
                 StopCoroutine(C_JumpStatusHandler());

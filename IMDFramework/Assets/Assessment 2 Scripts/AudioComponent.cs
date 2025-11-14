@@ -14,6 +14,7 @@ public class AudioComponent : MonoBehaviour
         
     /* Bools. */
     private bool b_IsPlayingAudio;
+    private bool b_IsLooping;
     
     /* Ints. */
     private int m_AudioArrayIndexPointer;
@@ -45,12 +46,12 @@ public class AudioComponent : MonoBehaviour
             m_AudioClipLength = AudioClipArray[m_AudioArrayIndexPointer].length;
         }
         
-        m_AudioSource.clip = AudioClipArray[m_AudioArrayIndexPointer];
+            m_AudioSource.clip = AudioClipArray[m_AudioArrayIndexPointer];
         
-        m_AudioSource.Play();
+            m_AudioSource.Play();
         
-        b_IsPlayingAudio = true;
-        StartCoroutine(C_PlayingAudio());
+            b_IsPlayingAudio = true;
+            StartCoroutine(C_PlayingAudio());
     }
 
     private void StopPlaySound()
@@ -59,13 +60,56 @@ public class AudioComponent : MonoBehaviour
         b_IsPlayingAudio = false;
     }
     
+    public void PlayLoopSound(int AudioClipIndex)
+    {
+        if (m_AudioSource.clip != null)
+        {
+            m_AudioArrayIndexPointer = AudioClipIndex;
+            
+            m_AudioSource.loop = true;
+            
+            m_AudioClipLength = AudioClipArray[m_AudioArrayIndexPointer].length;
+        }
+        
+        m_AudioSource.clip = AudioClipArray[m_AudioArrayIndexPointer];
+        
+        m_AudioSource.Play();
+        
+        b_IsPlayingAudio = true;
+        
+        StartCoroutine(C_PlayingLoopingAudio());
+    }
+    
+    public void StopLoopSound()
+    {
+        m_AudioSource.clip = null;
+        m_AudioSource.loop = false;
+        b_IsPlayingAudio = false;
+    }
+    
     private IEnumerator C_PlayingAudio()
     {
         while (b_IsPlayingAudio)
         {
-            yield return new  WaitForSecondsRealtime((m_AudioClipLength * 10));
+            yield return new  WaitForSecondsRealtime(m_AudioClipLength);
             
             StopPlaySound();
+        }
+    }
+
+
+    private IEnumerator C_PlayingLoopingAudio()
+    {
+        while (b_IsPlayingAudio)
+        {
+            yield return new  WaitForSecondsRealtime(m_AudioClipLength);
+
+            Debug.Log("Audio looped.");
+            
+            if (!b_IsLooping)
+            {
+                StopLoopSound();
+            }
         }
     }
 }
