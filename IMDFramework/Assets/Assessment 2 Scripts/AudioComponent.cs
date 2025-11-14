@@ -63,7 +63,7 @@ public class AudioComponent : MonoBehaviour
     {
         while (b_IsPlayingAudio)
         {
-            yield return new  WaitForSecondsRealtime(m_AudioClipLength);
+            yield return new  WaitForSecondsRealtime((m_AudioClipLength * 10));
             
             StopPlaySound();
         }

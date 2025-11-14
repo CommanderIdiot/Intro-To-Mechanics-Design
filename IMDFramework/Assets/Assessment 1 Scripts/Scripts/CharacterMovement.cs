@@ -70,11 +70,6 @@ public class CharacterMovement : MonoBehaviour
 
     private float m_RigidBodyGravity;
     
-    /* Audio Sources
-    [SerializeField] private AudioSource m_JumpingSound;
-    [SerializeField] private AudioSource m_LandingSound;
-    [SerializeField] private AudioSource m_WalkingSound; */
-    
     /* Particle Systems */
     [SerializeField] private ParticleSystem m_JumpingParticleEffect;
     
@@ -235,9 +230,6 @@ public class CharacterMovement : MonoBehaviour
 
             SoundCaller(m_WalkingSoundID);
             
-            /*Stupid idea:
-             * have fall checker run if jump is active.
-             */
                       if (b_IsJumpActive && !b_IsCheckingFallActive && !m_GroundDetector.GroundDetection())
                         {
                             //Debug.Log("Falling - Fall Checker.");

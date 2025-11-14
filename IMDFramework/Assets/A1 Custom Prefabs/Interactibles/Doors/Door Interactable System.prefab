@@ -181,6 +181,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_DoorObject: {fileID: 7997739425076421271}
+  m_DoorCreekSound: 4
+  m_AudioComponent: {fileID: 4724375493253943634, guid: 3357c003e0755d64c8b53ac23d3acd15, type: 3}
 --- !u!1 &5327464170991400074
 GameObject:
   m_ObjectHideFlags: 0
