@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class SpikeTrap : MonoBehaviour
 {
+    [Header("Spiketrap Settings")]
     [SerializeField] private float m_SpikeDamage;
     
     [SerializeField] private float m_CameraShakeMagnitude;

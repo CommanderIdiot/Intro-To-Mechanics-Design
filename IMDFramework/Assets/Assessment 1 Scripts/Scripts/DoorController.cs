@@ -2,22 +2,22 @@ using UnityEngine;
 
 public class DoorController : MonoBehaviour, IInteractable
 {
+    [Header("Door Object")]
     [SerializeField] private GameObject m_DoorObject;
     
-    [SerializeField] private int m_DoorCreekSound;
-    
-    private bool b_LeverAudioLoop = false;
+    [Header("Audio Settings")]
+    [SerializeField] private AudioSource m_AudioComponent;
 
-
-    [SerializeField] private AudioComponent m_AudioComponent;
+    [SerializeField] private AudioClip m_AudioClip;
     
+    [Header("Particle System")]
     [SerializeField] private ParticleSystem m_DoorParticles;
     
     public void Interact()
     {
         m_DoorObject.SetActive(!m_DoorObject.activeSelf);
 
-        m_AudioComponent.PlaySound(m_DoorCreekSound);
+        m_AudioComponent.Play();
         
         m_DoorParticles.Play();
     }

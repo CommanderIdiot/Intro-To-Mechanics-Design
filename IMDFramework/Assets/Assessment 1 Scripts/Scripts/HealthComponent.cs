@@ -3,12 +3,15 @@ using UnityEngine;
 
 public class HealthComponent : MonoBehaviour
 {
+    /* Events */
     public event Action<float, float, float> OnDamaged;
     public event Action<MonoBehaviour> OnDeath;
 
+    [Header ("Health")]
     [SerializeField] private float m_MaxHealth;
     private float m_CurrentHealth;
 
+    [Header ("Particle System")]
     [SerializeField] private ParticleSystem m_InjuryParticleSystem;
     
     private void Start()

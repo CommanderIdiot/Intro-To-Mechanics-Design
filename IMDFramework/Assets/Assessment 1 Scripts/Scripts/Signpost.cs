@@ -3,8 +3,10 @@ using UnityEngine;
 
 public class Signpost : MonoBehaviour, IInteractable
 {
+    [Header("Popup Message")]
     [SerializeField] private GameObject m_SignpostDisplayObject;
     
+    [Header("Message Visibility Settings")]
     private Coroutine c_cSignpostMessageVisibilityCoroutine;
     [SerializeField] private float m_MessageVisibilityThreashold;
     private float m_MessageVisibilityTimer;

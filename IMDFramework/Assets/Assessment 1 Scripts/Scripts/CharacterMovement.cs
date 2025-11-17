@@ -1,15 +1,72 @@
 using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
-
 
 public class CharacterMovement : MonoBehaviour
 {
     #region Variables
+    [Header("Layer Masks")]
     [SerializeField] public LayerMask m_GroundLayer;
     
-    /* Other Scripts/Compoonents.*/
+    [Header("Movement Variables")]
+    [SerializeField] private float m_MoveSpeed;
+    
+    [SerializeField] private int m_WalkingSoundID;
+    
+    private float m_InMove;
+    private bool b_IsMoveActive;
+    
+    [Header("Jump Variables")]
+    [SerializeField] private float m_JumpStrength;
+    [SerializeField] private float m_JumpPowerTimer;
+    
+    [SerializeField] private int m_JumpingSoundID;
+    [SerializeField] private int m_LandingSoundID;
+    
+    private float m_MinimumAmountFramesSinceOffGround;
+    
+    private bool b_IsGrounded;
+    private bool b_IsJumpActive = true;
+    private bool b_IsCheckingFallActive;
+    private bool b_IsFalling;
+    
+    [SerializeField] private int m_AscendLengthCounter;
+    private int m_CurrentAscendLength;
+    
+    [SerializeField] private int m_JumpApexLengthCounter;
+    private int m_CurrentJumpApexLength;
+    
+    [Header("Coyote Time")]
+    private bool b_IsCoyoteCoroutineActive;
+
+    [SerializeField] private float m_CoyoteTimeThreashold;
+    private float m_CoyoteTimeCounter;
+    
+    [Header("Jump Buffer")]
+    private bool b_IsJumpBufferActive;
+
+    [SerializeField] private float m_JumpBufferThreashold;
+    private float m_JumpBufferTimeCounter;
+    
+    [Header("Particle System")]
+    [SerializeField] private ParticleSystem m_JumpingParticleEffect;
+    
+    [Header("Camera Variables")]
+    private CameraShake m_PlayerCamera;
+    
+    [SerializeField] private float m_CameraShakeMagnitude;
+    [SerializeField] private float m_CameraShakeDuration;
+    
+    /* Enum */
+    public enum JumpStates
+    {
+        Ascend,
+        Apex,
+        Falling
+    }
+    
+    private JumpStates m_JumpState = JumpStates.Ascend;
+      
+    /* Other Scripts/Components.*/
     private Rigidbody2D m_RB;
     
     private PlayerControls m_ActionMap;
@@ -26,81 +83,14 @@ public class CharacterMovement : MonoBehaviour
     private Coroutine m_MoveCoroutine;
 
     private Coroutine m_JumpStatusHandler;
-    
-    /* Bools. */
-    private bool b_IsGrounded;
-    
-    private bool b_IsCoyoteCoroutineActive;
-    
-    private bool b_IsJumpActive = true;
-
-    private bool b_IsJumpBufferActive;
-    
-    private bool b_IsMoveActive;
-    private bool b_TempIsJumpActive;
-
-    private bool b_IsCheckingFallActive;
-    private bool b_IsFalling;
-
-    private bool b_JumpingAudioLoop = false;
-    private bool b_LandingAudioLoop = false;
-    private bool b_WalkingAudioLoop;
-
-    
-    /* Ints */
-    [SerializeField] private int m_AscendLengthCounter;
-    private int m_CurrentAscendLength;
-    
-    [SerializeField] private int m_JumpingSoundID;
-    [SerializeField] private int m_LandingSoundID;
-    [SerializeField] private int m_WalkingSoundID;
-
-    
-    [SerializeField] private int m_JumpApexLengthCounter;
-    private int m_CurrentJumpApexLength;
-    
-    /* Floats */
-    [SerializeField] private float m_MoveSpeed;
-    [SerializeField] private float m_JumpStrength;
-    private float m_InMove;
-    
-    [SerializeField] private float m_CoyoteTimeThreashold = 0.4f;
-    private float m_CoyoteTimeCounter;
-    private float m_MinimumAmountFramesSinceOffGround = 0;
-    
-    [SerializeField] float m_JumpPowerTimer;
-    
-    [SerializeField] private float m_JumpBufferThreashold = 0.4f;
-    private float m_JumpBufferTimeCounter;
-
-    private float m_RigidBodyGravity;
-    
-    /* Particle Systems */
-    [SerializeField] private ParticleSystem m_JumpingParticleEffect;
-    
-    /* Camera */
-    private CameraShake m_PlayerCamera;
-    
-    [SerializeField] private float m_CameraShakeMagnitude;
-    [SerializeField] private float m_CameraShakeDuration;
-    
-    /* Enum */
-    public enum JumpStates
-    {
-        Ascend,
-        Apex,
-        Falling
-    }
-    
-    private JumpStates m_JumpState = JumpStates.Ascend;
     #endregion
     
     #region Functions
-
     private void Awake()
     {
         m_ActionMap = new PlayerControls();
 
+        // Simply checks if a component is within the parent, then assigns it.
         if (GetComponentInParent<GroundDetector>() != null)
         {
             m_GroundDetector = GetComponent<GroundDetector>();
@@ -119,52 +109,46 @@ public class CharacterMovement : MonoBehaviour
         m_RB = GetComponent<Rigidbody2D>();
     }
 
-    private void Start()
-    {
-        m_RigidBodyGravity = m_RB.gravityScale;
-    }
-
     public void SetInMove(float direction)
     {
         m_InMove = direction;
         
-        if (m_InMove == 0)
+        if (m_InMove == 0) // If the player is not moving.
         {
             b_IsMoveActive = false;
         }
-        else
+        else // If the player is moving.
         {
             if(b_IsMoveActive) { return;}
             
             b_IsMoveActive = true;
             b_IsCheckingFallActive = true;
             
-            SoundCaller(m_WalkingSoundID, b_WalkingAudioLoop);
-
+            SoundCaller(m_WalkingSoundID);
             
             m_CoyoteTimeCounter = 0;
             
             StartCoroutine(C_MovementUpdate());
-            //StartCoroutine(C_FallChecker());
         }
     }
-
+    
+    public bool IsMoving()
+    {
+        return b_IsMoveActive;
+    }
     public void JumpPerformed()
     {
         b_IsGrounded = m_GroundDetector.GroundDetection();
-        //Debug.Log("IsGrounded equals "  + b_IsGrounded);
         
-            if (m_GroundDetector.GroundDetection() || m_CoyoteTimeCounter >= 0 && m_CoyoteTimeCounter <= m_CoyoteTimeThreashold)
+            if (m_GroundDetector.GroundDetection() || m_CoyoteTimeCounter >= 0 && m_CoyoteTimeCounter <= m_CoyoteTimeThreashold) // Attempts to detect if the player can jump.
             {
                 #region Assignment 2 Audio/Particle Parts
 
                 /* Checks if there is an audio source, then plays the sound if there is one.
                  * Checks if there is a particle system, then plays the effect if there is one.
                  * This is only included as it is needed in assignment 2, but I've put character movement in my assignment 1
-                 * script folder.
-                 */
-                //Maybe add camera shake in here to add juice about landing on the ground?
-
+                 * script folder.*/ 
+                
                 if (m_PlayerCamera != null)
                 {
                     m_PlayerCamera.ShakeCamera(m_CameraShakeMagnitude, m_CameraShakeDuration);
@@ -175,7 +159,7 @@ public class CharacterMovement : MonoBehaviour
                     m_JumpingParticleEffect.Play();
                 }
                 
-                SoundCaller(m_JumpingSoundID, b_JumpingAudioLoop);
+                SoundCaller(m_JumpingSoundID);
                 
                 #endregion
 
@@ -184,12 +168,11 @@ public class CharacterMovement : MonoBehaviour
                     m_CoyoteTimeCounter = 0;
                     m_MinimumAmountFramesSinceOffGround = 0;
                 
-                    StartCoroutine(C_JumpStatusHandler()); //Starts the jump status handler.
+                    StartCoroutine(C_JumpStatusHandler());
                 }
 
             }
-            //Performs if the jump buffer is not active
-            else if (!b_IsJumpBufferActive)
+            else if (!b_IsJumpBufferActive) //If the player can't jump.
             {
                 b_IsJumpBufferActive = true;
             
@@ -202,40 +185,20 @@ public class CharacterMovement : MonoBehaviour
         m_JumpState = JumpStates.Falling;
     }
 
-    public void SoundCaller(int m_SoundID, bool m_IsLooping)
+    public void SoundCaller(int m_SoundID)
     {
-        if (m_AudioComponent != null)
+        if (m_AudioComponent != null) // Only plays a sound if there's an audio component.
         {
-            if (!m_IsLooping)
-            {
                 m_AudioComponent.PlaySound(m_SoundID);
-            }
-            else if (m_IsLooping)
-            {
-                m_AudioComponent.PlayLoopSound(m_SoundID);
-            }
         }
     }
     
     #endregion
 
-    /* make a jump handler coroutine COMPLETED
-     * have it use a while loop for rising that adds a force mode 2d . force COMPLETED
-     * if for the apex COMPLETED
-     * a while until it touches the ground to stop the coroutine 
-     * reset state after jump is finished COMPLETED
-     * add a jump cancel event into input handler to cancel the jump COMPLETED
-     *
-     * get ground detector found in awake COMPLETED
-     * then call the function to return the detection as true or false COMPLETED
-     * have an update to run the raycast COMPLETED
-    */
-
     #region Coroutines
     
     /* Movement Coroutine.
-     * Handles the movement of the character while it is active.
-     */
+     * Handles the movement of the character while it is active. */
     private IEnumerator C_MovementUpdate()
     {
         while (b_IsMoveActive)
@@ -245,43 +208,36 @@ public class CharacterMovement : MonoBehaviour
             
                       if (b_IsJumpActive && !b_IsCheckingFallActive && !m_GroundDetector.GroundDetection())
                         {
-                            //Debug.Log("Falling - Fall Checker.");
-                            
                             b_IsCheckingFallActive = true;
                             
                             StartCoroutine(C_FallChecker());
-                            
-                            //b_IsCheckingFallActive = false;
                         }
         }
     }
 
-    private IEnumerator C_JumpStatusHandler()
+    private IEnumerator C_JumpStatusHandler()  // This handles the jump to have three parts that are executed after each other.
     {
-        //Enters jump handler.
-        m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse); //Adds a small force to the character.
+        m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Impulse);
         
-        while (m_JumpState == JumpStates.Ascend) //Starts when the jumpstates is ascend.
+        while (m_JumpState == JumpStates.Ascend) //Handles ascending.
         {
-                m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Force); //Adds a small force to the character.
+                m_RB.AddForce(Vector2.up * m_JumpStrength, ForceMode2D.Force);
                 
-                m_CurrentAscendLength++; //Increase the current ascend length to equal itself plus 1.
-                if (m_CurrentAscendLength == m_AscendLengthCounter) //When this is true.
+                m_CurrentAscendLength++;
+                if (m_CurrentAscendLength == m_AscendLengthCounter)
                 {
-                    m_JumpState = JumpStates.Apex; //Changes the jumpstate to apex.
+                    m_JumpState = JumpStates.Apex;
                     
                     m_CurrentAscendLength = 0;
                     
-                    yield break; //Breaks out.
+                    yield break;
                 }
                 
                 yield return new WaitForFixedUpdate();
         }
 
-        if (m_JumpState == JumpStates.Apex)
+        if (m_JumpState == JumpStates.Apex) // Handles when the jump is at the maximum height.
         {
-            //Debug.Log("Inside of jump apex");
-
             m_RB.gravityScale = 0.2f;
 
             for (int i = 0; i < m_JumpApexLengthCounter + 1; i++)
@@ -290,7 +246,7 @@ public class CharacterMovement : MonoBehaviour
                 
                 if (m_CurrentJumpApexLength == m_JumpApexLengthCounter)
                 {
-                    m_JumpState = JumpStates.Falling; //Changes the jumpstate to falling.
+                    m_JumpState = JumpStates.Falling;
                     
                     m_CurrentJumpApexLength = 0;
 
@@ -300,17 +256,15 @@ public class CharacterMovement : MonoBehaviour
             }
         }
 
-        while (m_JumpState == JumpStates.Falling)
+        while (m_JumpState == JumpStates.Falling) //Handles when the jump has finished and the player is falling.
         {
-            //Debug.Log("Inside of falling");
-
             m_RB.gravityScale = 1.0f;
 
             if (m_GroundDetector.GroundDetection())
             {
                 m_JumpState = JumpStates.Ascend;
                 
-                SoundCaller(m_LandingSoundID, b_LandingAudioLoop);
+                SoundCaller(m_LandingSoundID);
 
                 
                 StopCoroutine(C_JumpStatusHandler());
@@ -319,20 +273,17 @@ public class CharacterMovement : MonoBehaviour
             }
             yield return new WaitForFixedUpdate();
         }
+        
         yield return null;
     }
     
-    private IEnumerator C_FallChecker()
+    private IEnumerator C_FallChecker() // Intended to check if the player is currently falling.
     {
         while (b_IsCheckingFallActive)
         {
-            /* Clean this up a bit
-             * Add some more safeguards? In order to try and prevent coyote time being spammed
-             */
-            
             if (m_RB.linearVelocityY < 0)
             {
-                if (!b_IsCoyoteCoroutineActive)
+                if (!b_IsCoyoteCoroutineActive && !m_GroundDetector.GroundDetection()) //If the player is falling.
                 {
                     b_IsCoyoteCoroutineActive = true;
                     
@@ -342,7 +293,7 @@ public class CharacterMovement : MonoBehaviour
                 }
             }
 
-            if (m_GroundDetector.GroundDetection())
+            if (m_GroundDetector.GroundDetection()) // Detects if the player is currently grounded.
             {
                 b_IsCheckingFallActive = false;
             }
@@ -350,11 +301,6 @@ public class CharacterMovement : MonoBehaviour
         }
     }
     
-    /* Coyote time coroutine.
-     * Detects if the character is grounded by:
-     * 1. Has a certain time passed? This is in order to avoid double jumping.
-     * 2. Is the character on the ground?
-     */
     private IEnumerator C_CoyoteJumpCoroutine()
     {
         while (b_IsCoyoteCoroutineActive)
@@ -397,14 +343,12 @@ public class CharacterMovement : MonoBehaviour
         }
     }
     
-    /* Jump buffer coroutine.
-     * 
-     */
+
     private IEnumerator C_JumpBufferCoroutine()
     {
         while (b_IsJumpBufferActive)
         {
-            if (m_JumpBufferTimeCounter <= m_JumpBufferThreashold)
+            if (m_JumpBufferTimeCounter <= m_JumpBufferThreashold) // Checks if the jump is within the buffer time.
             {
                 if (m_GroundDetector.GroundDetection() && b_IsJumpActive)
                 {
@@ -420,7 +364,7 @@ public class CharacterMovement : MonoBehaviour
                     break; 
                 }
             }
-            else if (m_JumpBufferTimeCounter >= m_JumpBufferThreashold)
+            else if (m_JumpBufferTimeCounter >= m_JumpBufferThreashold) // Fail condition for jump buffering.
             {
                 m_JumpBufferTimeCounter = 0;
                 
@@ -436,12 +380,3 @@ public class CharacterMovement : MonoBehaviour
     #endregion 
 }
 
-/* Ideas for jump mechanics in movement:
- * 1. Jump performed after it gets triggered starts a coroutine that handles the jump in all stages.
- * 2. Adjusting size of the collider at the start of the jump to be smaller. Maybe need more colliders to do this or adjust the sizing of the only one.
- * 3. Adjusting the size of the collider towards the end of the fall to try and make people catch onto platforms they fall onto.
- * 4. Reset the collider size back to normal.
- * 5. The falling part of it gives the character sticky feet when falling.
- * 6. Figure out how to make the jump add a small amount of force for how long they have it held for.
- * 7. Crouching on ledges seems to be just detect if you're on a ledge should probably be on a different script.
- */

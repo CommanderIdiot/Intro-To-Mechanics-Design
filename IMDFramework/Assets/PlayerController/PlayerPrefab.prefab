@@ -4901,7 +4901,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3600401525870630746}
   - component: {fileID: 969958807700409231}
-  - component: {fileID: 6344908903130849834}
   - component: {fileID: 929667974029550097}
   - component: {fileID: 1012712164399510652}
   - component: {fileID: 2823562017512991436}
@@ -4966,18 +4965,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!114 &6344908903130849834
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1667636342438995758}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dbdd540b1d08c20458d9b747833bef94, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &929667974029550097
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4993,15 +4980,15 @@ MonoBehaviour:
   m_GroundLayer:
     serializedVersion: 2
     m_Bits: 8
-  m_AscendLengthCounter: 20
+  m_MoveSpeed: 5
+  m_WalkingSoundID: 2
+  m_JumpStrength: 10
+  m_JumpPowerTimer: 0
   m_JumpingSoundID: 0
   m_LandingSoundID: 1
-  m_WalkingSoundID: 2
+  m_AscendLengthCounter: 20
   m_JumpApexLengthCounter: 20
-  m_MoveSpeed: 5
-  m_JumpStrength: 10
   m_CoyoteTimeThreashold: 0.2
-  m_JumpPowerTimer: 0
   m_JumpBufferThreashold: 0.2
   m_JumpingParticleEffect: {fileID: 5871859006521570472}
   m_CameraShakeMagnitude: 0.1
@@ -5101,6 +5088,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d3a0fecde34c8d74d9bdc5d7f4fc02d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_JumpingAudioSource: {fileID: 0}
+  m_WalkingAudioSource: {fileID: 0}
+  m_LandingAudioSource: {fileID: 0}
   AudioClipArray:
   - {fileID: 8300000, guid: b151c920498619d40828021e28df67a8, type: 3}
   - {fileID: 8300000, guid: 79c2756e5df9fe9488cf703345edfb6e, type: 3}

@@ -11,14 +11,7 @@ public class CameraShake : MonoBehaviour
     private float m_PlayerShakeMagnitude;
     private float m_PlayerShakeDuration;
     
-    /* Coroutine */
-
     #endregion
-
-    /* Do this so it receives an event to do something?
-     * or
-     * Do this so it is called by another script as a function?
-     */
 
     private void Awake()
     {
@@ -33,6 +26,12 @@ public class CameraShake : MonoBehaviour
         StartCoroutine(C_CameraShaking(ShakeMagnitude, ShakeDuration));
     }
     
+    /// <summary>
+    /// Takes a shake magnitude & duration, then shakes the camera in a random manner for the duration up to the shake magnitude's maximum value.
+    /// </summary>
+    /// <param name="m_PlayerShakeMagnitude"></param>
+    /// <param name="m_PlayerShakeDuration"></param>
+    /// <returns></returns>
     public IEnumerator C_CameraShaking(float m_PlayerShakeMagnitude, float m_PlayerShakeDuration)
     {
         Vector3 OriginalPosition = Camera.main.transform.localPosition;

@@ -38,7 +38,6 @@ public class InputHandler : MonoBehaviour
     #endregion
     
     #region InputFunctions
-
     private void Handle_SetInMove(InputAction.CallbackContext context)
     {
         m_CharacterMovement.SetInMove(context.ReadValue<float>());
