@@ -1,0 +1,16 @@
+VisualElement {}
+#MainContainer
+{
+    width: 100%;
+    height: 100%;
+}
+
+.PositionLabelContainer
+{
+    height: 10%;
+    width: 25%;
+    margin: 2%;
+    align-self: flex-start;
+    align-content: flex-start;
+    flex-direction: row;
+}

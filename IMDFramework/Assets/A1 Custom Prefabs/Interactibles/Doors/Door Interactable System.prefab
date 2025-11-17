@@ -5105,6 +5105,7 @@ GameObject:
   - component: {fileID: 9210693264469725795}
   - component: {fileID: 4388030527914402461}
   - component: {fileID: 5149634064940163170}
+  - component: {fileID: 9211656623940973911}
   m_Layer: 6
   m_Name: Door Lever Assembly
   m_TagString: Untagged
@@ -5193,6 +5194,21 @@ MonoBehaviour:
   m_AudioComponent: {fileID: 7637810350163305673}
   m_AudioClip: {fileID: 8300000, guid: 72bfa1818e0accb4f9549c4553872441, type: 3}
   m_DoorParticles: {fileID: 6933164877215411803}
+--- !u!114 &9211656623940973911
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2894389290644713876}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5138a4a99453d384c86d51e4783f7f03, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ShakeMagnitude: 0.2
+  m_ShakeDuration: 0.2
+  m_DoorObject: {fileID: 7997739425076421271}
 --- !u!1 &5327464170991400074
 GameObject:
   m_ObjectHideFlags: 0

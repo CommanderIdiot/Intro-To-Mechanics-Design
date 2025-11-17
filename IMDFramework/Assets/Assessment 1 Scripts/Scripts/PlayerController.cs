@@ -1,3 +1,4 @@
+using Assessment_1_Scripts.Scripts;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -24,6 +25,7 @@ public class PlayerController : MonoBehaviour
 
     private void Handle_OnHealthDamage(float CurrentHealth, float MaxHealth, float InboundDamage)
     {
+        // Make a UI health change.
         Debug.Log($"Current health is: {CurrentHealth} out of {MaxHealth} and the damage receieved was: {InboundDamage}");
     }
 

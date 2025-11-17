@@ -1,4 +1,5 @@
 using System.Collections;
+using Assessment_1_Scripts.Scripts; 
 using UnityEngine;
 
 public class SpikeTrap : MonoBehaviour
