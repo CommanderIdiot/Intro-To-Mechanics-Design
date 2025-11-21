@@ -4,5 +4,5 @@ using UnityEngine;
 public class SignpostTextStorage : ScriptableObject
 {
     [Header("Text")]
-    [SerializeField] public string m_TextStorage;
+    public string TextStorage;
 }

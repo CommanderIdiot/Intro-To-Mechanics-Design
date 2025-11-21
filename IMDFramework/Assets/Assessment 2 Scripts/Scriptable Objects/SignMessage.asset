@@ -10,6 +10,6 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 690985fd9cd04054aba30dc90b1f9aca, type: 3}
-  m_Name: TurtorialSignText
+  m_Name: SignMessage
   m_EditorClassIdentifier: 
-  m_TextStorage: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  TextStorage: AAA

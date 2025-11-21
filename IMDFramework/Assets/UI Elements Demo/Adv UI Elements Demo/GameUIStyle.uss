@@ -4,6 +4,7 @@ VisualElement {
 #MainContainer {
     width: 45%;
     height: 100%;
+    align-self: flex-start;
 }
 
 .PositionLabelContainer {
