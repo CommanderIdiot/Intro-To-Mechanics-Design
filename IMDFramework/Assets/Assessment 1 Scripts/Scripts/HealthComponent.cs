@@ -1,5 +1,7 @@
 using System;
 using UnityEngine;
+using Unity.Properties;
+
 
 namespace Assessment_1_Scripts.Scripts
 {
@@ -16,6 +18,9 @@ namespace Assessment_1_Scripts.Scripts
         [Header ("Particle System")]
         [SerializeField] private ParticleSystem m_InjuryParticleSystem;
     
+        [CreateProperty]
+        public float PlayerCurrentHealth { get { return m_CurrentHealth; } }
+        
         private void Start()
         {
             m_CurrentHealth = m_MaxHealth;

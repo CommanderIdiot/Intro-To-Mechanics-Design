@@ -1,16 +1,17 @@
-VisualElement {}
-#MainContainer
-{
-    width: 100%;
+VisualElement {
+}
+
+#MainContainer {
+    width: 45%;
     height: 100%;
 }
 
-.PositionLabelContainer
-{
-    height: 10%;
-    width: 25%;
-    margin: 2%;
-    align-self: flex-start;
-    align-content: flex-start;
-    flex-direction: row;
+.PositionLabelContainer {
+    width: 40%;
+    padding: 2px;
+    border-width: 2px;
+    border-color: black;
+    background-color: black;
+    color: white;
+    -unity-text-align: middle-left;
 }

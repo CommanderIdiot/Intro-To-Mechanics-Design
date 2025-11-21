@@ -1,3 +1,5 @@
+using Assessment_1_Scripts.Scripts;
+using Unity.Properties;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -18,6 +20,12 @@ namespace UI_Elements_Demo.Adv_UI_Elements_Demo
             m_LableContainer.AddToClassList("PositionLabelContainer");
             m_Container.Add(m_LableContainer);
             
+            Label m_HealthBar = new Label();
+            m_HealthBar.name = "Health Label";
+            m_HealthBar.text = "Health: ____";
+            m_HealthBar.AddToClassList("HealthLabel");
+            m_LableContainer.Add(m_HealthBar);
+            
             Label m_XLabel = new Label();
             m_XLabel.name = "X Label";
             m_XLabel.text = "X: ____";
@@ -31,6 +39,20 @@ namespace UI_Elements_Demo.Adv_UI_Elements_Demo
             m_LableContainer.Add(m_YLabel);
 
             #endregion
+
+            HealthComponent m_PlayerCurrentHealth = GameObject.Find("PlayerPrefab").GetComponent<HealthComponent>();
+
+            DataBinding m_HealthBarBinding = new DataBinding
+            {
+                dataSource = m_PlayerCurrentHealth,
+                dataSourcePath = new Unity.Properties.PropertyPath("PlayerCurrentHealth"),
+                bindingMode = BindingMode.ToTarget,
+            };
+
+            m_HealthBarBinding.updateTrigger = BindingUpdateTrigger.OnSourceChanged;
+            m_HealthBarBinding.sourceToUiConverters.AddConverter( (ref float value) => $"Health: {value:F2}");
+            m_HealthBar.SetBinding("text", m_HealthBarBinding);
+
             
             TransformWrapper m_PlayerTransform = GameObject.Find("PlayerPrefab").GetComponent<TransformWrapper>();
 

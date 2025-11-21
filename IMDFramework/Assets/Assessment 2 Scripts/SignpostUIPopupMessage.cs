@@ -1,19 +1,26 @@
-using System.Collections;
 using UnityEngine;
+using UnityEngine.UIElements;
+using System.Collections;
+using Unity.Properties;
+using UnityEngine.Rendering;
+using UnityEngine.UI;
 
-public class Signpost : MonoBehaviour, IInteractable
+
+public class SignpostUIPopupMessage : MonoBehaviour
 {
-    [Header("Popup Message")]
-    [SerializeField] private GameObject m_SignpostDisplayObject;
+    [Header("UI Elements")]
+    [SerializeField] private UIDocument UIDocument;
+    [SerializeField] private ScriptableObject m_SignpostText;
     
     [Header("Message Visibility Settings")]
     private Coroutine m_SignpostMessageVisibilityCoroutine;
     [SerializeField] private float m_MessageVisibilityThreashold;
     private float m_MessageVisibilityTimer;
     
+    [CreateProperty] private ScriptableObject SignText { get { return m_SignpostText; } }
+    
     public void Interact()
     { 
-        m_SignpostDisplayObject.SetActive(true);
         Debug.Log("Message coroutine started");
         StartCoroutine(c_SignpostMessageVisibilityCoroutine());
     }
@@ -25,7 +32,8 @@ public class Signpost : MonoBehaviour, IInteractable
             if (m_MessageVisibilityTimer >= m_MessageVisibilityThreashold)
             {
                 m_MessageVisibilityTimer = 0;
-                m_SignpostDisplayObject.SetActive(false);
+                
+                
                 
                 Debug.Log("Message coroutine ended");
                 StopCoroutine(c_SignpostMessageVisibilityCoroutine());

@@ -1,0 +1,15 @@
+VisualElement {}
+#TextUIContainer
+{
+    align-self: center;
+    width: 100%;
+    height: 100%;
+}
+.TextLableContainer
+{
+    width: 100%;
+    border-width: 2px;
+    border-color: black;
+    background-color: black;
+    color: white;
+}

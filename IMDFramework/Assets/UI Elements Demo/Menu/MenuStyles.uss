@@ -12,7 +12,7 @@
 
 .button:hover {
     width: 115%;
-    height: 65%;
+    height: 50%;
     justify-content: center;
     align-self: center;
     align-content: flex-start;
